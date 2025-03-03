@@ -3,7 +3,7 @@ import { verifyAdminToken } from '@/lib/utils/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const isValid = verifyAdminToken(request);
+    const isValid = await verifyAdminToken(request);
     
     if (isValid) {
       return NextResponse.json({ success: true });
@@ -11,10 +11,14 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({ success: false }, { status: 401 });
   } catch (error) {
-    console.error('Auth verification error:', error);
-    return NextResponse.json({ 
-      success: false, 
-      message: 'Auth verification failed' 
-    }, { status: 500 });
+    console.error('Error verifying admin token:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: 'Error verifying token',
+        error: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
   }
 } 

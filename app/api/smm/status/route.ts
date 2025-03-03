@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkSMMOrderStatus } from '@/lib/api/smm';
+import { checkSMMOrder } from '@/lib/api/smm';
 import { adminDb } from '@/lib/firebase-admin';
 import { verifyAdminToken } from '@/lib/utils/auth';
 
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Check SMM order status
-    const statusResponse = await checkSMMOrderStatus({ order: smmOrderId });
+    const statusResponse = await checkSMMOrder(smmOrderId);
     
     // Update order status in database
     let orderStatus = 'processing';
@@ -48,6 +48,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: false, 
       message: 'Failed to check SMM order status' 
+    }, { status: 500 });
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const orderId = url.searchParams.get('orderId');
+  
+  if (!orderId) {
+    return NextResponse.json({
+      success: false,
+      message: 'Missing order ID'
+    }, { status: 400 });
+  }
+  
+  try {
+    const result = await checkSMMOrder(orderId);
+    
+    return NextResponse.json({
+      success: true,
+      status: result
+    });
+  } catch (error) {
+    console.error('Error checking SMM order status:', error);
+    
+    return NextResponse.json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 } 

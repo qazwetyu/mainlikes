@@ -8,10 +8,10 @@ interface SMMService {
   price: number; // Price per 1000 units in MNT
 }
 
-// Configuration for SMM Raja services
+// Configuration for SMMA Pro services
 export const smmServices: Record<string, SMMService> = {
   instagramFollow: {
-    id: 3901,
+    id: 1479,
     name: "Instagram Followers",
     type: "follow",
     description: "High-quality Instagram followers",
@@ -20,7 +20,7 @@ export const smmServices: Record<string, SMMService> = {
     price: 8000 // 8000 MNT per 1000 followers
   },
   instagramLike: {
-    id: 1143,
+    id: 8117,
     name: "Instagram Likes",
     type: "like",
     description: "High-quality Instagram likes",

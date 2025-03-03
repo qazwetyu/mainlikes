@@ -3,30 +3,48 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { getAnalytics, logEvent } from 'firebase/analytics';
 
+// Updated Firebase configuration using the correct values for likesmn-1cafc project
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyA1aCgv6YhJNQ9fpuBIY_b__AcDSewcNY8", // This matches the error logs
+  authDomain: "likesmn-1cafc.firebaseapp.com",
+  projectId: "likesmn-1cafc", // From your service account
+  storageBucket: "likesmn-1cafc.appspot.com",
+  messagingSenderId: "733889583172", // From error logs
+  appId: "1:733889583172:web:a17df8fdc2ac71aad9ea82", // From error logs
+  measurementId: "G-0TTS7KBCB0" // From error logs
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-// Initialize Analytics only on client side
+// Conditionally initialize Firebase only on the client side
+let app;
+let db;
+let auth;
 let analytics = null;
+
 if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
+  try {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    db = getFirestore(app);
+    auth = getAuth(app);
+    analytics = getAnalytics(app);
+    console.log("Firebase initialized successfully");
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+  }
+} else {
+  // Server-side placeholder
+  app = null;
+  db = null;
+  auth = null;
 }
 
-// Analytics helper function
+// Analytics helper function with error handling
 const trackEvent = (eventName: string, eventParams?: any) => {
   if (analytics) {
-    logEvent(analytics, eventName, eventParams);
+    try {
+      logEvent(analytics, eventName, eventParams);
+    } catch (error) {
+      console.error("Analytics error:", error);
+    }
   }
 };
 

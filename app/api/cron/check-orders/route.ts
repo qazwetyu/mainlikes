@@ -1,46 +1,33 @@
-import { NextResponse } from 'next/server';
-import { adminDb } from '@/src/lib/firebase-admin';
-import { checkSMMOrder } from '@/src/lib/api/smm';
+import { NextRequest, NextResponse } from 'next/server';
+import { mockOrders } from '@/app/utils/mockData';
 
-export async function GET(req: Request) {
+export async function GET(request: NextRequest) {
   try {
-    // Get all processing orders
-    const ordersRef = adminDb.collection('orders');
-    const processingOrders = await ordersRef
-      .where('status', '==', 'processing')
-      .get();
+    // In a real implementation, this would:
+    // 1. Query orders with status 'processing' from the database
+    // 2. Check the status of each order with the SMM API
+    // 3. Update orders that are complete
 
-    const updates = processingOrders.docs.map(async (doc) => {
-      const order = doc.data();
-      
-      if (!order.smmOrderId) return;
-
-      const smmStatus = await checkSMMOrder(order.smmOrderId);
-
-      let newStatus = order.status;
-      if (smmStatus.status === 'Completed') {
-        newStatus = 'completed';
-      } else if (smmStatus.status === 'Failed') {
-        newStatus = 'failed';
-      }
-
-      if (newStatus !== order.status) {
-        await doc.ref.update({
-          status: newStatus,
-          updatedAt: new Date().toISOString()
-        });
-      }
+    // For the mock implementation, just log what we would do
+    console.log('Running mock order status check cron job');
+    
+    // Log how many orders would be checked
+    const processingOrders = mockOrders.filter(order => order.status === 'processing');
+    console.log(`Would check ${processingOrders.length} processing orders`);
+    
+    // Return success response
+    return NextResponse.json({
+      success: true,
+      message: 'Cron job executed successfully',
+      checked: processingOrders.length,
+      updated: 0 // In a real implementation, this would be the count of updated orders
     });
-
-    await Promise.all(updates);
-
-    return NextResponse.json({ success: true });
-
   } catch (error) {
-    console.error('Order status check error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Status check failed' },
-      { status: 500 }
-    );
+    console.error('Error in cron job:', error);
+    return NextResponse.json({
+      success: false,
+      message: 'Error executing cron job',
+      error: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 } 

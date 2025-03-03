@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { HeartIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { db } from '@/src/lib/firebase';
+import ServiceCard from "@/components/ServiceCard";
+import PaymentButton from "@/components/PaymentButton";
 
 const services = [
   {
@@ -38,10 +40,13 @@ export default function Services() {
   const [selectedService, setSelectedService] = useState(services[0]);
   const [selectedPackage, setSelectedPackage] = useState<null | { amount: number; price: number }>(null);
   const [username, setUsername] = useState("");
+  const [loadingServiceId, setLoadingServiceId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPackage || !username) return;
+    
+    setLoadingServiceId(selectedService.id);
     
     try {
       const response = await fetch('/api/orders', {
@@ -69,6 +74,45 @@ export default function Services() {
       console.error('Payment error:', error);
       // Show error message to user
       alert('Төлбөр төлөх үед алдаа гарлаа. Дахин оролдоно уу.');
+    } finally {
+      setLoadingServiceId(null);
+    }
+  };
+
+  const handlePayment = async (serviceId: string, price: number, name: string) => {
+    setLoadingServiceId(serviceId);
+    
+    try {
+      console.log('Creating byl.mn payment for:', { serviceId, price, name });
+      
+      // Generate a unique order ID
+      const orderId = "order-" + Math.random().toString(36).substring(2, 9);
+      
+      const response = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: price,
+          description: `Payment for ${name}`,
+          orderId,
+          customerEmail: "" // Add customer email if available
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.paymentUrl) {
+        // Redirect to byl.mn payment page
+        console.log('Redirecting to był.mn payment:', data.paymentUrl);
+        window.location.href = data.paymentUrl;
+      } else {
+        throw new Error(data.message || "Payment creation failed");
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Төлбөр үүсгэхэд алдаа гарлаа. Дахин оролдоно уу.");
+    } finally {
+      setLoadingServiceId(null);
     }
   };
 
@@ -190,17 +234,15 @@ export default function Services() {
               className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors text-gray-900 placeholder-gray-400"
               required
             />
-            <button
-              type="submit"
-              disabled={!selectedPackage || !username}
+            <PaymentButton
+              onPayment={() => handlePayment(selectedService.id, selectedPackage?.price || 0, selectedService.title)}
+              disabled={!selectedPackage || !username || loadingServiceId === selectedService.id}
               className={`w-full mt-4 py-4 rounded-lg font-semibold text-white transition-all ${
                 selectedPackage && username
                   ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-lg"
                   : "bg-gray-400 cursor-not-allowed"
               }`}
-            >
-              Төлбөр төлөх
-            </button>
+            />
           </div>
         </motion.form>
       </div>

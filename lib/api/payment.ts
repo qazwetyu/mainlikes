@@ -1,6 +1,6 @@
-// import axios from 'axios';
+import axios from 'axios';
 
-interface PaymentRequest {
+interface PaymentInvoiceParams {
   amount: number;
   description: string;
   returnUrl: string;
@@ -14,42 +14,119 @@ interface PaymentResponse {
   status: string;
 }
 
-export async function createPaymentInvoice(data: PaymentRequest): Promise<PaymentResponse> {
+export async function createPaymentInvoice({
+  amount,
+  description,
+  returnUrl,
+  orderId,
+  customerEmail
+}: PaymentInvoiceParams): Promise<PaymentResponse> {
   try {
-    if (!process.env.BYL_API_URL) {
-      throw new Error('BYL_API_URL is not defined');
+    console.log('Creating BYL.mn checkout for:', { amount, orderId, description });
+    
+    // Check for required config
+    if (!process.env.BYL_API_KEY) {
+      throw new Error('BYL API key is missing');
     }
     
-    const response = await fetch(process.env.BYL_API_URL, 
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.BYL_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...data,
-          currency: 'MNT',
-          callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/callback`
-        })
-      }
-    );
+    // Get project ID from environment variables
+    const BYL_PROJECT_ID = process.env.BYL_PROJECT_ID || '99';
     
-    return response.json();
+    // Construct the proper URL for the Checkout API
+    const checkoutEndpoint = `https://byl.mn/api/v1/projects/${BYL_PROJECT_ID}/checkouts`;
+    
+    console.log('Calling BYL Checkout API at:', checkoutEndpoint);
+    
+    // Set up success and cancel URLs
+    // Make sure these are absolute URLs with https://
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://likes.mn';
+    const successUrl = `${baseUrl}/payment/success?orderId=${orderId}`;
+    const cancelUrl = `${baseUrl}/payment/cancel?orderId=${orderId}`;
+    
+    // Log the URLs for debugging
+    console.log('Using success URL:', successUrl);
+    console.log('Using cancel URL:', cancelUrl);
+    
+    // Call the BYL Checkout API
+    const response = await fetch(checkoutEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.BYL_API_KEY}`,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        client_reference_id: orderId,
+        customer_email: customerEmail || undefined,
+        items: [
+          {
+            price_data: {
+              unit_amount: amount,
+              product_data: {
+                name: description,
+                client_reference_id: orderId
+              }
+            },
+            quantity: 1
+          }
+        ]
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('BYL Checkout API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`BYL Payment API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('BYL Checkout API response:', JSON.stringify(data, null, 2));
+    
+    // Extract checkout ID and payment URL
+    let checkoutId = null;
+    let paymentUrl = null;
+    
+    if (data.data && data.data.id) {
+      checkoutId = data.data.id;
+    }
+    
+    if (data.data && data.data.url) {
+      paymentUrl = data.data.url;
+    }
+    
+    if (!checkoutId || !paymentUrl) {
+      console.error('Invalid BYL Checkout response structure:', data);
+      throw new Error('BYL payment gateway returned an invalid response');
+    }
+    
+    console.log('BYL Checkout created:', { checkoutId, paymentUrl });
+    
+    return {
+      invoiceId: checkoutId.toString(),
+      paymentUrl,
+      status: 'pending'
+    };
   } catch (error) {
-    console.error('Payment creation failed:', error);
-    throw new Error('Payment creation failed');
+    console.error('Error creating BYL checkout:', error);
+    throw error;
   }
 }
 
-export async function verifyPayment(invoiceId: string) {
+// Update the verification function to work with checkouts
+export async function verifyPayment(checkoutId: string) {
   try {
-    console.log(`Verifying payment for invoice ${invoiceId}`);
+    console.log(`Verifying BYL checkout: ${checkoutId}`);
     
-    const BYL_API_URL = 'https://byl.mn/api/v1';
-    const BYL_PROJECT_ID = '99'; // Your project ID
+    const BYL_PROJECT_ID = process.env.BYL_PROJECT_ID || '99';
+    const checkoutEndpoint = `https://byl.mn/api/v1/projects/${BYL_PROJECT_ID}/checkouts/${checkoutId}`;
     
-    const response = await fetch(`${BYL_API_URL}/projects/${BYL_PROJECT_ID}/invoices/${invoiceId}`, {
+    const response = await fetch(checkoutEndpoint, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${process.env.BYL_API_KEY}`,
@@ -57,17 +134,23 @@ export async function verifyPayment(invoiceId: string) {
       }
     });
 
+    if (!response.ok) {
+      throw new Error(`BYL API error: ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.json();
+    console.log('BYL checkout verification response:', data);
     
-    // Check if the invoice is paid
-    const isPaid = data.data && data.data.status === 'paid';
+    // Check if the checkout is complete
+    const isComplete = data.data && data.data.status === 'complete';
+    const clientReferenceId = data.data?.client_reference_id;
     
     return {
-      verified: isPaid,
-      orderId: data.data?.client_reference_id || null
+      verified: isComplete,
+      orderId: clientReferenceId
     };
   } catch (error) {
-    console.error('Payment verification error:', error);
+    console.error('BYL checkout verification error:', error);
     return { verified: false, orderId: null };
   }
 } 

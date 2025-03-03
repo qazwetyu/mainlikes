@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Favicon Generator</title>
+</head>
+<body>
+  <h1>Favicon Generator</h1>
+  <p>This page will generate favicon files from your SVG</p>
+  
+  <canvas id="canvas16" width="16" height="16"></canvas>
+  <canvas id="canvas32" width="32" height="32"></canvas>
+  <canvas id="canvas180" width="180" height="180"></canvas>
+  
+  <div id="download-links"></div>
+  
+  <script>
+    // Load your SVG
+    const svgUrl = '/favicon.svg';
+    const img = new Image();
+    img.onload = function() {
+      // Generate different sizes
+      generateFavicon(img, 'canvas16', 16, 'favicon-16x16.png');
+      generateFavicon(img, 'canvas32', 32, 'favicon-32x32.png');
+      generateFavicon(img, 'canvas180', 180, 'apple-touch-icon.png');
+    };
+    img.src = svgUrl;
+    
+    function generateFavicon(img, canvasId, size, filename) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, size, size);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.textContent = `Download ${filename}`;
+      document.getElementById('download-links').appendChild(link);
+      document.getElementById('download-links').appendChild(document.createElement('br'));
+    }
+  </script>
+</body>
+</html> 

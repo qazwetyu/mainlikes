@@ -19,7 +19,7 @@ export async function createSMMOrder(data: {
   quantity: number 
 }) {
   const apiKey = process.env.SMMRAJA_API_KEY || "10Nw(e(j@6d@s(Q@1@Se(mb*";
-  const endpoint = process.env.SMMRAJA_API_URL || "https://smmraja.com/api/v2";
+  const endpoint = process.env.SMMRAJA_API_URL || "https://www.smmraja.com/api/v3";
   
   // Use service ID 3901 for followers if not specified
   const serviceId = data.service || "3901";

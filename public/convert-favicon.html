@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PNG to Favicon Converter</title>
+</head>
+<body>
+  <h1>PNG to Favicon Converter</h1>
+  <p>Upload your add-friend.png file:</p>
+  
+  <input type="file" id="imageInput" accept="image/png">
+  
+  <div>
+    <h2>Previews:</h2>
+    <canvas id="canvas16" width="16" height="16"></canvas>
+    <canvas id="canvas32" width="32" height="32"></canvas>
+    <canvas id="canvas180" width="180" height="180"></canvas>
+  </div>
+  
+  <div id="download-links"></div>
+  
+  <script>
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          // Generate different sizes
+          generateFavicon(img, 'canvas16', 16, 'favicon-16x16.png');
+          generateFavicon(img, 'canvas32', 32, 'favicon-32x32.png');
+          generateFavicon(img, 'canvas180', 180, 'apple-touch-icon.png');
+        };
+        img.src = event.target.result;
+      };
+      
+      reader.readAsDataURL(file);
+    });
+    
+    function generateFavicon(img, canvasId, size, filename) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw the image
+      ctx.drawImage(img, 0, 0, size, size);
+      
+      // Create download link
+      const linkId = `link-${filename}`;
+      let link = document.getElementById(linkId);
+      
+      if (!link) {
+        link = document.createElement('a');
+        link.id = linkId;
+        document.getElementById('download-links').appendChild(link);
+        document.getElementById('download-links').appendChild(document.createElement('br'));
+      }
+      
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.textContent = `Download ${filename}`;
+    }
+  </script>
+</body>
+</html> 

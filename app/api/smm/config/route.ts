@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { smmServices } from '@/lib/config/smm-services';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // Get query parameters
@@ -29,7 +32,8 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching SMM config:', error);
     return NextResponse.json({ 
       success: false, 
-      message: 'Failed to fetch SMM configuration' 
+      message: 'Failed to fetch SMM configuration',
+      error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 } 

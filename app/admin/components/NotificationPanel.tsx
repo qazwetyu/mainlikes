@@ -1,68 +1,69 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { db } from '@/src/lib/firebase';
-import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { useState } from 'react';
 
 interface Notification {
   id: string;
-  type: string;
-  orderId: string;
   message: string;
-  createdAt: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  timestamp: Date;
   read: boolean;
 }
 
 export default function NotificationPanel() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-
-  useEffect(() => {
-    const q = query(
-      collection(db, 'notifications'),
-      orderBy('createdAt', 'desc'),
-      limit(50)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newNotifications = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Notification[];
-      
-      setNotifications(newNotifications);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const getNotificationStyle = (type: string) => {
-    switch (type) {
-      case 'payment_success': return 'bg-green-50 text-green-800';
-      case 'payment_failed': return 'bg-red-50 text-red-800';
-      case 'order_completed': return 'bg-blue-50 text-blue-800';
-      case 'order_failed': return 'bg-yellow-50 text-yellow-800';
-      default: return 'bg-gray-50 text-gray-800';
+  // Static notifications data that doesn't rely on Firebase
+  const [notifications] = useState<Notification[]>([
+    {
+      id: '1',
+      message: 'Welcome to the new Admin Dashboard',
+      type: 'info',
+      timestamp: new Date(),
+      read: false
+    },
+    {
+      id: '2',
+      message: 'Firebase-free system is now active',
+      type: 'success',
+      timestamp: new Date(),
+      read: false
+    },
+    {
+      id: '3',
+      message: 'Remember to check new orders regularly',
+      type: 'warning',
+      timestamp: new Date(Date.now() - 3600000), // 1 hour ago
+      read: false
     }
-  };
+  ]);
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h2 className="text-lg font-semibold mb-4">Notifications</h2>
-      <div className="space-y-2">
-        {notifications.map((notification) => (
-          <div
-            key={notification.id}
-            className={`p-3 rounded-lg ${getNotificationStyle(notification.type)} ${
-              !notification.read ? 'border-l-4 border-blue-500' : ''
-            }`}
-          >
-            <p className="text-sm">{notification.message}</p>
-            <p className="text-xs mt-1 text-gray-500">
-              {new Date(notification.createdAt).toLocaleString('mn-MN')}
-            </p>
-          </div>
-        ))}
-      </div>
+    <div className="bg-white p-4 rounded-lg shadow">
+      <h2 className="text-lg font-semibold mb-2">Recent Notifications</h2>
+      
+      {notifications.length === 0 ? (
+        <p className="text-gray-500">No new notifications</p>
+      ) : (
+        <ul className="space-y-2">
+          {notifications.map((notification) => (
+            <li 
+              key={notification.id}
+              className={`p-2 rounded ${
+                notification.type === 'success' ? 'bg-green-50 border-l-4 border-green-500' :
+                notification.type === 'warning' ? 'bg-yellow-50 border-l-4 border-yellow-500' :
+                notification.type === 'error' ? 'bg-red-50 border-l-4 border-red-500' :
+                'bg-blue-50 border-l-4 border-blue-500'
+              }`}
+            >
+              <div className="flex justify-between">
+                <p className="text-sm">{notification.message}</p>
+                <span className="text-xs text-gray-500">
+                  {notification.timestamp.toLocaleTimeString()}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 } 

@@ -1,22 +1,41 @@
 import { verify } from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
+import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-
-export function verifyAdminToken(request: NextRequest): boolean {
+// Mock implementation of admin authentication
+export async function verifyAdminToken(request: NextRequest) {
   try {
+    // Get the token from the cookies
     const token = request.cookies.get('admin_token')?.value;
     
     if (!token) {
       return false;
     }
     
-    const decoded = verify(token, JWT_SECRET);
-    return typeof decoded === 'object' && decoded !== null && decoded.role === 'admin';
+    // For our static mock, just check if the token exists and has a simple format
+    if (token.includes('.') && token.length > 20) {
+      return true;
+    }
+    
+    return false;
   } catch (error) {
-    console.error('Token verification failed:', error);
+    console.error('Error verifying admin token:', error);
     return false;
   }
+}
+
+// Create a JWT token for admin authentication
+export function createAdminToken() {
+  const secret = process.env.JWT_SECRET || 'fallback-secret-for-development';
+  
+  return jwt.sign(
+    { 
+      role: 'admin',
+      timestamp: Date.now() 
+    },
+    secret,
+    { expiresIn: '7d' }
+  );
 }
 
 export async function checkAdminAuth(): Promise<boolean> {

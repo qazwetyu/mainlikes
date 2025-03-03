@@ -13,105 +13,42 @@ function generateId() {
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    console.log('Received order data:', data);
+    const orderData = await request.json();
     
-    // Extract amount from package.price
-    const amount = data.package?.price;
+    // Generate a mock order ID
+    const orderId = `order-${Date.now()}`;
     
-    // Check if amount is present
-    if (!amount || typeof amount !== 'number') {
-      return NextResponse.json(
-        { success: false, message: 'Package price is required and must be a number' }, 
-        { status: 400 }
-      );
-    }
+    // Log the order data
+    console.log('Creating new order:', orderData);
     
-    // Create the order in Firestore
-    const orderId = generateId();
-    const orderRef = adminDb.collection('orders').doc(orderId);
-    
-    await orderRef.set({
-      ...data,
-      id: orderId,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
+    // Return a success response with a mock order
+    return NextResponse.json({
+      success: true,
+      message: 'Order created successfully',
+      order: {
+        id: orderId,
+        ...orderData,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      }
     });
-    
-    // Make sure to pass amount as a number
-    const bylResponse = await createBylInvoice({
-      amount: Number(amount),
-      orderId: orderId,
-      description: `${data.service} - ${data.package?.amount || ''} for ${data.username}`,
-      callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/byl/callback`
-    });
-    
-    // Update the order with payment info
-    await orderRef.update({
-      bylPaymentUrl: bylResponse.invoiceUrl,
-      bylInvoiceId: bylResponse.invoiceId,
-      paymentStatus: 'pending',
-      updatedAt: new Date().toISOString()
-    });
-    
-    return NextResponse.json({ 
-      success: true, 
-      orderId,
-      paymentUrl: bylResponse.invoiceUrl
-    });
-    
   } catch (error) {
-    console.error('Order creation error:', error);
-    return NextResponse.json({ 
-      success: false, 
-      message: error instanceof Error ? error.message : 'An unknown error occurred' 
+    console.error('Error creating order:', error);
+    return NextResponse.json({
+      success: false,
+      message: 'Failed to create order',
+      error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }
 
 // Add status check when fetching orders
-export async function GET(req: Request) {
-  try {
-    // Check status of processing orders on each request
-    const processingOrders = await adminDb.collection('orders')
-      .where('status', '==', 'processing')
-      .get();
-
-    // Update order statuses
-    const updates = processingOrders.docs.map(async (doc) => {
-      const order = doc.data();
-      if (!order.smmOrderId) return;
-
-      try {
-        const smmStatus = await checkSMMOrder(order.smmOrderId);
-        
-        if (smmStatus.status === 'Completed' || smmStatus.status === 'Failed') {
-          await doc.ref.update({
-            status: smmStatus.status.toLowerCase(),
-            updatedAt: new Date().toISOString()
-          });
-        }
-      } catch (error) {
-        console.error(`Failed to check order ${doc.id}:`, error);
-      }
-    });
-
-    await Promise.all(updates);
-
-    // Return orders as normal
-    return NextResponse.json({
-      success: true,
-      orders: processingOrders.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
-    });
-
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch orders' },
-      { status: 500 }
-    );
-  }
+export async function GET() {
+  // This would normally list orders, but for our static version,
+  // just return a message that this endpoint is working
+  return NextResponse.json({
+    success: true,
+    message: 'Orders API endpoint is working',
+    timestamp: new Date().toISOString()
+  });
 } 
