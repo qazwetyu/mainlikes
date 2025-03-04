@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
 import { createSMMOrder } from '@/lib/api/smm';
 
 export const dynamic = 'force-dynamic';
@@ -11,19 +10,6 @@ interface BylWebhookPayload {
     [key: string]: any;
   };
   [key: string]: any;
-}
-
-interface OrderData {
-  serviceDetails: {
-    serviceId: string;
-    targetUrl?: string;
-    quantity: number;
-  };
-  username: string;
-  amount: number;
-  status: string;
-  paymentStatus: string;
-  updatedAt: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -39,36 +25,17 @@ export async function POST(request: NextRequest) {
     
     if (status === 'complete') {
       try {
-        const orderRef = adminDb.collection('orders').doc(orderId);
-        const orderDoc = await orderRef.get();
-        const orderData = orderDoc.data();
-        
-        if (!orderData) {
-          throw new Error('Order not found');
-        }
-
-        const order = orderData as OrderData;
-
-        if (!order) {
-          throw new Error('Order not found');
-        }
-
-        // SMM ДЭЭР ЗАХИАЛГА ПСДАГ ҮҮСГЭНЭ
+        // Шууд webhook сдагаас шинэ захиалга үүсгэнэ
         const smmResult = await createSMMOrder({
-          service: order.serviceDetails.serviceId,
-          link: order.username,
-          quantity: order.amount
+          service: payload.data.serviceId,
+          link: payload.data.username,
+          quantity: payload.data.amount
         });
 
-        // ҮҮСГЭСЭН ЗАХИАЛГЫГ БАТАЛГААЖУУЛЖ ШААНА
-        await orderRef.update({
-          status: 'processing',
-          smmOrderId: smmResult.order,
-          paymentStatus: 'paid',
-          updatedAt: new Date().toISOString()
+        return NextResponse.json({ 
+          success: true,
+          smmOrderId: smmResult.order
         });
-
-        return NextResponse.json({ success: true });
       } catch (error) {
         console.error('Error processing order:', error);
         return NextResponse.json({ success: false }, { status: 500 });
