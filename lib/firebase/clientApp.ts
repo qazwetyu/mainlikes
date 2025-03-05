@@ -1,51 +1,70 @@
-// Client-side Firebase initialization with build-time safety
+/**
+ * Mock Firebase Client SDK for builds and development environments
+ */
 
-// Determine if we're in a browser environment
-const isBrowser = typeof window !== 'undefined';
+console.log('Using mock Firebase Client SDK for build');
 
-// Only initialize Firebase in browser environments
-export const initializeFirebase = () => {
-  if (isBrowser) {
-    // This will only run on the client side
-    console.log('Initializing real Firebase client SDK');
-    
-    // Here you would normally initialize Firebase
-    // But during static build, this code won't run
-    
-    return {
-      auth: {
-        currentUser: null,
-        onAuthStateChanged: (callback: any) => {
-          // Call with null user immediately
-          setTimeout(() => callback(null), 0);
-          return () => {}; // Return unsubscribe function
-        },
-        signInWithEmailAndPassword: async (email: string, password: string) => ({
-          user: { uid: 'mock-user-id', email }
-        }),
-        signOut: async () => {}
-      }
-    };
-  } else {
-    // This runs during build/SSR
-    console.log('Using mock Firebase client SDK in server context');
-    
-    // Return mock implementations
-    return {
-      auth: {
-        currentUser: null,
-        onAuthStateChanged: (callback: any) => {
-          callback(null);
-          return () => {};
-        },
-        signInWithEmailAndPassword: async (email: string, password: string) => ({
-          user: { uid: 'mock-user-id', email }
-        }),
-        signOut: async () => {}
-      }
-    };
+// Mock Firebase Auth
+const auth = {
+  onAuthStateChanged: (callback: (user: any) => void) => {
+    // Simulate no user for builds
+    callback(null);
+    // Return mock unsubscribe function
+    return () => {};
+  },
+  signInWithEmailAndPassword: async (email: string, password: string) => {
+    console.log(`Mock sign in with email: ${email}`);
+    return { user: { email, uid: 'mock-uid' } };
+  },
+  signOut: async () => {
+    console.log('Mock sign out');
   }
 };
 
-// Export a pre-initialized instance
-export const firebaseClient = initializeFirebase(); 
+// Mock Firestore
+const firestore = {
+  collection: (path: string) => ({
+    doc: (id: string) => ({
+      get: async () => ({
+        exists: true,
+        data: () => {
+          console.log(`Would fetch document ${id} from ${path}`);
+          return {
+            id,
+            createdAt: new Date().toISOString(),
+          };
+        },
+      }),
+      set: async (data: any) => {
+        console.log(`Would set document ${id} in ${path} with:`, data);
+        return { id };
+      },
+      update: async (data: any) => {
+        console.log(`Would update document ${id} in ${path} with:`, data);
+        return { id };
+      },
+    }),
+    add: async (data: any) => {
+      const id = `mock-${Date.now()}`;
+      console.log(`Would add document to ${path} with:`, data);
+      return { id };
+    },
+    where: () => ({
+      get: async () => ({
+        empty: false,
+        docs: [
+          {
+            id: 'mock-doc',
+            data: () => ({ id: 'mock-doc' }),
+          },
+        ],
+      }),
+    }),
+  }),
+};
+
+// Export the mock Firebase client
+export const firebaseClient = {
+  auth,
+  db: firestore,
+}; 

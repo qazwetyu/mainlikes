@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkSMMOrder } from '@/lib/api/smm';
-import { adminDb } from '@/lib/firebase-admin';
-import { verifyAdminToken } from '@/lib/utils/auth';
+import { checkSMMOrder } from '../../../lib/api/smm';
+import { adminDb } from '../../../lib/firebase-admin';
+import { verifyAdminToken } from '../../../lib/utils/auth';
 
 export async function POST(request: NextRequest) {
   try {

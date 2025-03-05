@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { Metadata } from 'next';
-import '@/app/globals.css';
-import { AuthProvider } from '@/contexts/AuthContext';
+import './globals.css';
+import { AuthProvider } from '../contexts/AuthContext';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
