@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { trackEvent } from '@/lib/utils/analytics'; // Safer analytics
+import { trackEvent } from '@/app/lib/utils/analytics'; // Fix import path
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();

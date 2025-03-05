@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifyJwt } from '@/lib/utils/jwt';
+import { verifyJwt } from '@/app/lib/utils/jwt';
 
 export const runtime = 'nodejs';
 
