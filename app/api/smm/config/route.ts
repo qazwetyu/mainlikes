@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { smmServices } from '@/lib/config/smm-services';
+import { smmServices } from '../../../lib/config/smm-services';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
-import { createSMMOrder } from '@/lib/api/smm';
+import { adminDb } from '../../../lib/firebase-admin';
+import { createSMMOrder } from '../../../lib/api/smm';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,11 +45,11 @@ export async function POST(request: NextRequest) {
     if (status === 'complete') {
       try {
         // Шууд webhook сдагаас шинэ захиалга үүсгэнэ
-        const smmResult = await createSMMOrder({
-          service: payload.data.serviceId,
-          link: payload.data.username,
-          quantity: payload.data.amount
-        });
+        const smmResult = await createSMMOrder(
+          payload.data.serviceId,
+          payload.data.username,
+          payload.data.amount
+        );
 
         // Save order details to Firebase
         const orderRef = adminDb.collection('orders').doc(orderId);

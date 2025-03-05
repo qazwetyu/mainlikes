@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSMMOrder } from '@/lib/api/smm';
-import { adminDb } from '@/lib/firebase-admin';
-import { verifyAdminToken } from '@/lib/utils/auth';
+import { createSMMOrder } from '../../../lib/api/smm';
+import { adminDb } from '../../../lib/firebase-admin';
+import { verifyAdminToken } from '../../../lib/utils/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +22,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Create SMM order
-    const smmResponse = await createSMMOrder({ service, link, quantity });
+    const smmResponse = await createSMMOrder(
+      service,
+      link,
+      quantity
+    );
     
     // Update order with SMM order ID
     await adminDb.collection('orders').doc(orderId).update({
