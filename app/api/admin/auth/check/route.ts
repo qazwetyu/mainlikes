@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/utils/jwt';
+import { verifyJwt } from '@/lib/utils/jwt';
 
 export const runtime = 'nodejs';
 
@@ -12,7 +12,7 @@ export async function GET() {
       return NextResponse.json({ isAuthenticated: false }, { status: 401 });
     }
 
-    const verified = verifyToken(token);
+    const verified = await verifyJwt(token);
     return NextResponse.json({ 
       isAuthenticated: Boolean(verified) 
     });

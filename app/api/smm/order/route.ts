@@ -26,14 +26,14 @@ export async function POST(request: NextRequest) {
     
     // Update order with SMM order ID
     await adminDb.collection('orders').doc(orderId).update({
-      smmOrderId: smmResponse.order,
+      smmOrderId: smmResponse.orderId,
       status: 'processing',
       updatedAt: new Date().toISOString()
     });
     
     return NextResponse.json({ 
       success: true, 
-      orderId: smmResponse.order
+      orderId: smmResponse.orderId
     });
   } catch (error) {
     console.error('SMM order creation error:', error);

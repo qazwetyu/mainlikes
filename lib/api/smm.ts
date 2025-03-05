@@ -34,31 +34,79 @@ interface SMMResponse {
   status: string;
 }
 
-// Mock implementation of SMM API
+const API_URL = process.env.SMM_API_URL || 'https://smmapro.com/api/v2';
+const API_KEY = process.env.SMM_API_KEY;
 
-export async function createSMMOrder(params: SMMOrderParams) {
-  console.log('Creating mock SMM order:', params);
-  
-  const orderId = Math.floor(Math.random() * 1000000).toString();
-  
-  return {
-    success: true,
-    order: orderId,
-    balance: "5000.000"
-  };
+export interface SMMOrderStatus {
+  status: 'pending' | 'processing' | 'completed' | 'canceled' | 'failed';
+  remains?: number;
+  start_count?: number;
+  current_count?: number;
+  charge?: number;
+  currency?: string;
 }
 
-export async function checkSMMOrder(orderId: string) {
-  console.log('Checking mock SMM order status:', orderId);
+export async function checkSMMOrder(orderId: string): Promise<SMMOrderStatus> {
+  // In a real implementation, you would call the SMM provider's API
+  // For example:
+  // const response = await fetch(`${SMM_API_URL}/status`, {
+  //   method: 'POST',
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //     'Authorization': `Bearer ${SMM_API_KEY}`
+  //   },
+  //   body: JSON.stringify({ order: orderId })
+  // });
+  // return await response.json();
   
-  const statuses = ['Pending', 'In progress', 'Completed', 'Failed'];
-  const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+  // For now, return mock data based on order ID
+  console.log(`Checking SMM order status for order: ${orderId}`);
   
-  return {
-    success: true,
-    status: randomStatus,
-    remains: randomStatus === 'Completed' ? 0 : Math.floor(Math.random() * 100)
-  };
+  // Simulate random status based on order ID last digit
+  const lastDigit = parseInt(orderId.slice(-1)) || 0;
+  
+  if (lastDigit < 3) {
+    return {
+      status: 'pending',
+      charge: 0,
+    };
+  } else if (lastDigit < 6) {
+    return {
+      status: 'processing',
+      start_count: 0,
+      current_count: Math.floor(Math.random() * 500),
+      remains: Math.floor(Math.random() * 500),
+      charge: Math.random() * 10,
+      currency: 'USD'
+    };
+  } else if (lastDigit < 9) {
+    return {
+      status: 'completed',
+      start_count: 0,
+      current_count: 1000,
+      remains: 0,
+      charge: Math.random() * 20,
+      currency: 'USD'
+    };
+  } else {
+    return {
+      status: 'failed',
+      charge: 0,
+    };
+  }
+}
+
+export async function createSMMOrder(params: {
+  service: string;
+  link: string;
+  quantity: number;
+}): Promise<{ orderId: string }> {
+  // In a real implementation, you would call the SMM provider's API
+  // For now, return a mock order ID
+  const orderId = `SMM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  console.log(`Created SMM order: ${orderId} for service: ${params.service}, link: ${params.link}, quantity: ${params.quantity}`);
+  
+  return { orderId };
 }
 
 // Get available services

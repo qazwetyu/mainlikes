@@ -1,44 +1,65 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface PaymentButtonProps {
-  onPayment: () => Promise<void>;
-  className?: string;
-  disabled?: boolean;
-  children?: ReactNode;
-  loadingText?: string;
+  serviceId: string;
+  serviceName: string;
+  price: number;
+  buttonText?: string;
 }
 
 export default function PaymentButton({ 
-  onPayment, 
-  className = "", 
-  disabled = false,
-  children = "Төлбөр төлөх", // Default text
-  loadingText = "Уншиж байна..." // Default loading text
+  serviceId, 
+  serviceName, 
+  price, 
+  buttonText = "Buy Now" 
 }: PaymentButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleClick = async () => {
-    if (isLoading) return;
-    
-    setIsLoading(true);
+  const handlePayment = async () => {
+    setLoading(true);
+
     try {
-      await onPayment();
+      // Create order in your backend
+      const response = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          serviceId,
+          serviceName,
+          price,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create order');
+      }
+
+      // Redirect to payment page
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      }
     } catch (error) {
-      console.error("Payment error:", error);
+      console.error('Payment error:', error);
+      alert('Payment processing error. Please try again.');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={disabled || isLoading}
-      className={`px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-md hover:from-purple-600 hover:to-pink-600 transition-all duration-200 disabled:opacity-70 ${className}`}
+    <Button 
+      onClick={handlePayment} 
+      disabled={loading}
+      className="w-full"
     >
-      {isLoading ? loadingText : children}
-    </button>
+      {loading ? 'Processing...' : buttonText}
+    </Button>
   );
 } 

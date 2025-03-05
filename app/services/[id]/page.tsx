@@ -54,7 +54,12 @@ export default function ServiceDetailPage({ params }: { params: { id: string } }
           <div className="border-t border-gray-200 pt-4 mt-4">
             <div className="flex justify-between items-center mb-6">
               <div className="text-2xl font-bold">{service?.price} ₮</div>
-              <PaymentButton onPayment={handlePayment} />
+              <PaymentButton 
+                serviceId={params.id}
+                serviceName={service?.name || 'Service'}
+                price={service?.price || 0}
+                buttonText="Buy Now"
+              />
             </div>
           </div>
         </div>

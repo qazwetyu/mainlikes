@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminDb } from '@/lib/firebase-admin';
+import { createSMMOrder } from '@/lib/api/smm';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -13,74 +15,92 @@ interface BylWebhookPayload {
   [key: string]: any;
 }
 
+// Define the order data interface
+interface OrderData {
+  id?: string;
+  status?: string;
+  smmOrderId?: string;
+  paymentStatus?: string;
+  serviceType?: string;
+  serviceDetails?: {
+    serviceId: number | string;
+    targetUrl: string;
+    quantity: number;
+    [key: string]: any;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Get the raw request body for signature verification
+    // Log the raw request for debugging
     const rawBody = await request.text();
-    console.log('BYL webhook received:', rawBody);
+    console.log('Webhook raw payload:', rawBody);
     
-    // Parse the webhook payload
-    const payload: BylWebhookPayload = JSON.parse(rawBody);
+    // Parse the request body
+    const payload = JSON.parse(rawBody);
+    console.log('Payment webhook received:', payload);
     
-    // Basic validation
-    if (!payload || !payload.data || !payload.data.client_reference_id) {
-      console.error('Invalid webhook payload');
+    // Extract order ID from the payload
+    const orderId = payload.data?.client_reference_id || payload.order_id || payload.reference;
+    
+    if (!orderId) {
+      console.error('No order ID found in webhook payload');
       return NextResponse.json({ 
         success: false, 
-        message: 'Invalid webhook payload' 
+        message: 'Missing order ID in webhook' 
       }, { status: 400 });
     }
     
-    // Extract order information
-    const { client_reference_id: orderId, status } = payload.data;
-    console.log(`Processing payment webhook for order ${orderId}, status: ${status}`);
+    console.log(`Processing webhook for order: ${orderId}`);
     
-    // Process based on payment status
-    if (status === 'complete') {
-      // Payment is successful, update order status
-      try {
-        // Here you would update the order in your database
-        // For now, just log that we would update it
-        console.log(`Would update order ${orderId} to status 'paid'`);
-        
-        // Return success
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Payment confirmed', 
-          orderId 
-        });
-      } catch (dbError) {
-        console.error('Database error:', dbError);
-        return NextResponse.json({ 
-          success: false, 
-          message: 'Failed to update order status',
-          error: dbError instanceof Error ? dbError.message : String(dbError)
-        }, { status: 500 });
-      }
-    } else if (status === 'expired') {
-      // Payment has expired
-      console.log(`Order ${orderId} payment has expired`);
+    // Save order to Firebase
+    const orderRef = adminDb.collection('orders').doc(orderId);
+    
+    // First, check if the order already exists
+    const orderDoc = await orderRef.get();
+    if (orderDoc.exists) {
+      console.log(`Order ${orderId} already exists in database`);
       return NextResponse.json({ 
-        success: true, 
-        message: 'Payment expired', 
-        orderId 
-      });
-    } else {
-      // Other statuses
-      console.log(`Order ${orderId} payment status: ${status}`);
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Payment status received', 
-        orderId, 
-        status 
+        success: true,
+        message: 'Order already processed',
+        orderId: orderId
       });
     }
+    
+    // Process order with SMM provider
+    const smmOrderResult = await createSMMOrder({
+      service: payload.service_id || '1479', // Instagram Followers service ID
+      link: payload.target_link || 'https://instagram.com/default_user',
+      quantity: payload.quantity || 100
+    });
+    
+    // Save order details to Firebase
+    await orderRef.set({
+      orderId: orderId,
+      paymentData: payload,
+      smmOrderId: smmOrderResult.orderId,
+      status: 'processing',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+    
+    console.log('Created SMM order and saved to database:', smmOrderResult);
+    
+    return NextResponse.json({ 
+      success: true,
+      message: 'Webhook processed successfully',
+      orderId: orderId,
+      smmOrderId: smmOrderResult.orderId
+    });
   } catch (error) {
     console.error('Webhook processing error:', error);
     return NextResponse.json({ 
       success: false, 
-      message: 'Захиалга баталгаажуулахад алдаа гарлаа',
-      error: error instanceof Error ? error.message : String(error)
+      message: 'Error processing webhook',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

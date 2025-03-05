@@ -1,7 +1,10 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { getAnalytics, logEvent } from 'firebase/analytics';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getAuth, signInWithEmailAndPassword, signOut, Auth } from 'firebase/auth';
+import { getAnalytics, logEvent, Analytics } from 'firebase/analytics';
+
+// Check if we're in browser environment
+const isBrowser = typeof window !== 'undefined';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -14,22 +17,69 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
-const auth = getAuth(app);
+// Initialize Firebase only in browser
+let app: FirebaseApp;
+let db: Firestore;
+let auth: Auth;
+let analytics: Analytics | null = null;
 
-// Initialize Analytics only on client side
-let analytics = null;
-if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
+if (isBrowser) {
+  try {
+    // Initialize Firebase only if it hasn't been initialized already
+    if (!getApps().length) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApps()[0];
+    }
+    
+    // Initialize services
+    db = getFirestore(app);
+    auth = getAuth(app);
+    
+    // Analytics works only in browser and is optional
+    if (process.env.NODE_ENV !== 'development') {
+      analytics = getAnalytics(app);
+    }
+  } catch (error) {
+    console.error('Firebase initialization error:', error);
+  }
 }
 
 // Analytics helper function
 const trackEvent = (eventName: string, eventParams?: any) => {
-  if (analytics) {
-    logEvent(analytics, eventName, eventParams);
+  if (isBrowser && analytics) {
+    try {
+      logEvent(analytics, eventName, eventParams);
+    } catch (error) {
+      console.error("Analytics error:", error);
+    }
   }
 };
+
+// Create empty stubs for server-side rendering
+if (!isBrowser) {
+  // Create stub implementations with proper types
+  const mockApp = {} as FirebaseApp;
+  const mockDb = {
+    collection: () => ({
+      doc: () => ({
+        get: () => Promise.resolve({ exists: false, data: () => null }),
+        set: () => Promise.resolve(),
+        update: () => Promise.resolve()
+      })
+    })
+  } as unknown as Firestore;
+  
+  const mockAuth = {
+    currentUser: null,
+    onAuthStateChanged: () => () => {},
+    signInWithEmailAndPassword: () => Promise.resolve({ user: null }),
+    signOut: () => Promise.resolve()
+  } as unknown as Auth;
+  
+  app = mockApp;
+  db = mockDb;
+  auth = mockAuth;
+}
 
 export { app, db, auth, signInWithEmailAndPassword, signOut, trackEvent }; 

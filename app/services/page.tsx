@@ -235,13 +235,10 @@ export default function Services() {
               required
             />
             <PaymentButton
-              onPayment={() => handlePayment(selectedService.id, selectedPackage?.price || 0, selectedService.title)}
-              disabled={!selectedPackage || !username || loadingServiceId === selectedService.id}
-              className={`w-full mt-4 py-4 rounded-lg font-semibold text-white transition-all ${
-                selectedPackage && username
-                  ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-lg"
-                  : "bg-gray-400 cursor-not-allowed"
-              }`}
+              serviceId={selectedService.id}
+              serviceName={selectedService.title}
+              price={selectedPackage?.price || 0}
+              buttonText={loadingServiceId === selectedService.id ? "Processing..." : "Buy Now"}
             />
           </div>
         </motion.form>

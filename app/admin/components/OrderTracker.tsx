@@ -2,84 +2,89 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, limit, Firestore } from 'firebase/firestore';
 
 interface Order {
   id: string;
-  service: string;
-  amount: number;
-  price: number;
-  username: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  createdAt: string;
-}
-
-interface OrderStats {
-  total: number;
-  pending: number;
-  processing: number;
-  completed: number;
-  failed: number;
-  recentOrders: Order[];
+  status: string;
+  createdAt: any;
+  // add other fields as needed
 }
 
 export default function OrderTracker() {
-  const [stats, setStats] = useState<OrderStats>({
-    total: 0,
-    pending: 0,
-    processing: 0,
-    completed: 0,
-    failed: 0,
-    recentOrders: []
-  });
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const ordersQuery = query(
-      collection(db, 'orders'),
-      orderBy('createdAt', 'desc')
-    );
+    // Skip if we're not in browser or if db is not available
+    if (typeof window === 'undefined' || !db) {
+      setIsLoading(false);
+      return;
+    }
 
-    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
-      const orders = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Order[];
-      
-      setStats({
-        total: orders.length,
-        pending: orders.filter(order => order.status === 'pending').length,
-        processing: orders.filter(order => order.status === 'processing').length,
-        completed: orders.filter(order => order.status === 'completed').length,
-        failed: orders.filter(order => order.status === 'failed').length,
-        recentOrders: orders.slice(0, 5)
+    try {
+      const q = query(
+        collection(db, 'orders'),
+        orderBy('createdAt', 'desc'),
+        limit(10)
+      );
+
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const orderList: Order[] = [];
+        querySnapshot.forEach((doc) => {
+          orderList.push({ id: doc.id, ...doc.data() } as Order);
+        });
+        setOrders(orderList);
+        setIsLoading(false);
+      }, (error) => {
+        console.error("Error fetching orders:", error);
+        setError("Failed to load recent orders");
+        setIsLoading(false);
       });
-    });
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Error setting up order tracker:", error);
+      setError("Failed to initialize order tracking");
+      setIsLoading(false);
+    }
   }, []);
 
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
+
+  if (isLoading) {
+    return <div className="animate-pulse">Loading recent orders...</div>;
+  }
+
+  if (orders.length === 0) {
+    return <div className="text-gray-500">No recent orders</div>;
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-      <div className="glass-card p-4 rounded-xl">
-        <h3 className="text-sm font-medium text-gray-500">Нийт захиалга</h3>
-        <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-      </div>
-      <div className="glass-card p-4 rounded-xl">
-        <h3 className="text-sm font-medium text-gray-500">Хүлээгдэж буй</h3>
-        <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-      </div>
-      <div className="glass-card p-4 rounded-xl">
-        <h3 className="text-sm font-medium text-gray-500">Боловсруулж буй</h3>
-        <p className="text-2xl font-bold text-purple-600">{stats.processing}</p>
-      </div>
-      <div className="glass-card p-4 rounded-xl">
-        <h3 className="text-sm font-medium text-gray-500">Дууссан</h3>
-        <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-      </div>
-      <div className="glass-card p-4 rounded-xl">
-        <h3 className="text-sm font-medium text-gray-500">Амжилтгүй</h3>
-        <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
-      </div>
+    <div className="space-y-2">
+      {orders.map((order) => (
+        <div 
+          key={order.id} 
+          className="p-3 bg-white rounded shadow-sm border-l-4 border-blue-500"
+        >
+          <div className="flex justify-between">
+            <span className="font-medium">{order.id}</span>
+            <span className={`px-2 py-1 text-xs rounded-full ${
+              order.status === 'completed' ? 'bg-green-100 text-green-800' : 
+              order.status === 'processing' ? 'bg-blue-100 text-blue-800' : 
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {order.status}
+            </span>
+          </div>
+          <div className="text-sm text-gray-500 mt-1">
+            {order.createdAt?.toDate().toLocaleString() || 'Unknown date'}
+          </div>
+        </div>
+      ))}
     </div>
   );
 } 
