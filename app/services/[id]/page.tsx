@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import PaymentButton from "@/components/PaymentButton";
+import PaymentButton from "@/app/components/PaymentButton";
 
 export default function ServiceDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();

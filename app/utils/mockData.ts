@@ -35,15 +35,29 @@ export const mockOrders = [
   }
 ];
 
+// Enhanced mock users data combining existing with new data
 export const mockUsers = [
   {
     id: 'user-1',
     email: 'admin@example.com',
     role: 'admin',
     createdAt: '2023-01-01T00:00:00Z'
+  },
+  {
+    id: "1",
+    name: "John Doe",
+    email: "john@example.com",
+    role: "admin"
+  },
+  {
+    id: "2",
+    name: "Jane Smith",
+    email: "jane@example.com",
+    role: "user"
   }
 ];
 
+// Enhanced mock services data combining existing services with new ones
 export const mockServices = [
   {
     id: '1',
@@ -51,11 +65,14 @@ export const mockServices = [
     description: 'High-quality Instagram followers',
     type: 'instagram',
     category: 'followers',
+    price: 14.99,
     packages: [
       { id: '1-1', amount: 500, price: 14.99 },
       { id: '1-2', amount: 1000, price: 29.99 },
       { id: '1-3', amount: 5000, price: 99.99 }
-    ]
+    ],
+    features: ["Real Followers", "Fast Delivery", "24/7 Support"],
+    imageUrl: "/images/services/instagram.jpg"
   },
   {
     id: '2',
@@ -63,11 +80,14 @@ export const mockServices = [
     description: 'Instant Instagram likes',
     type: 'instagram',
     category: 'likes',
+    price: 4.99,
     packages: [
       { id: '2-1', amount: 100, price: 4.99 },
       { id: '2-2', amount: 500, price: 19.99 },
       { id: '2-3', amount: 1000, price: 34.99 }
-    ]
+    ],
+    features: ["Instant Delivery", "High Quality", "Natural Engagement"],
+    imageUrl: "/images/services/instagram-likes.jpg"
   },
   {
     id: '3',
@@ -75,11 +95,44 @@ export const mockServices = [
     description: 'Real TikTok followers',
     type: 'tiktok',
     category: 'followers',
+    price: 19.99,
     packages: [
       { id: '3-1', amount: 1000, price: 19.99 },
       { id: '3-2', amount: 2500, price: 39.99 },
       { id: '3-3', amount: 5000, price: 69.99 }
-    ]
+    ],
+    features: ["Genuine Followers", "Profile Boost", "High Retention"],
+    imageUrl: "/images/services/tiktok.jpg"
+  },
+  {
+    id: "4",
+    name: "Website Development",
+    description: "Professional website development services for your business",
+    type: 'web',
+    category: 'development',
+    price: 999,
+    features: ["Responsive Design", "SEO Optimization", "Content Management System"],
+    imageUrl: "/images/services/website.jpg"
+  },
+  {
+    id: "5",
+    name: "Mobile App Development",
+    description: "Custom mobile applications for iOS and Android platforms",
+    type: 'mobile',
+    category: 'development',
+    price: 1499,
+    features: ["Native Development", "User Authentication", "Push Notifications"],
+    imageUrl: "/images/services/mobile-app.jpg"
+  },
+  {
+    id: "6",
+    name: "UI/UX Design",
+    description: "User-focused design services to enhance user experience",
+    type: 'design',
+    category: 'design',
+    price: 799,
+    features: ["User Research", "Wireframing", "Prototyping"],
+    imageUrl: "/images/services/design.jpg"
   }
 ];
 
@@ -205,4 +258,34 @@ export const generateMockStats = (): DashboardStats => {
       yearly: generateRandomData(5, 500000, 2000000),
     }
   };
+};
+
+// Mock payments data
+export const mockPayments = [
+  {
+    id: "p1",
+    userId: "2",
+    serviceId: "1",
+    amount: 999,
+    status: "completed",
+    createdAt: "2023-10-15T13:45:00Z"
+  },
+  {
+    id: "p2",
+    userId: "2",
+    serviceId: "3",
+    amount: 799,
+    status: "pending",
+    createdAt: "2023-10-18T10:30:00Z"
+  }
+];
+
+// Get service by ID helper function
+export const getServiceById = (id: string) => {
+  return mockServices.find(service => service.id === id);
+};
+
+// Get payments by user ID helper function
+export const getPaymentsByUserId = (userId: string) => {
+  return mockPayments.filter(payment => payment.userId === userId);
 }; 
