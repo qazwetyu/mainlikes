@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
-import { checkSMMOrder } from '@/lib/api/smm';
+import { adminDb } from '../../../../lib/firebase-admin';
+import { checkSMMOrder } from '../../../../lib/api/smm';
 
 // Define the order data interface
 interface OrderData {

@@ -1,5 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockOrders } from '@/app/utils/mockData';
+
+// Simplified mock data for the build process
+const mockOrders = [
+  {
+    id: 'order-1',
+    service: 'Instagram Followers',
+    link: 'https://instagram.com/user123',
+    username: 'user123',
+    quantity: 1000,
+    price: 29.99,
+    status: 'completed',
+    createdAt: '2023-08-15T09:30:00Z',
+    updatedAt: '2023-08-15T10:30:00Z'
+  },
+  {
+    id: 'order-2',
+    service: 'TikTok Likes',
+    link: 'https://tiktok.com/@user456/video/123',
+    username: 'user456',
+    quantity: 2000,
+    price: 19.99,
+    status: 'processing',
+    createdAt: '2023-08-16T14:20:00Z',
+    updatedAt: '2023-08-16T14:25:00Z'
+  }
+];
 
 interface OrderData {
   [key: string]: any;

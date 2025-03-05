@@ -1,5 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockOrders } from '../../../../utils/mockData';
+
+// Simplified mock data for the build process
+const mockOrders = [
+  {
+    id: 'order-1',
+    service: 'Instagram Followers',
+    status: 'completed',
+  },
+  {
+    id: 'order-2',
+    service: 'TikTok Likes',
+    status: 'processing',
+  },
+  {
+    id: 'order-3',
+    service: 'YouTube Views',
+    status: 'pending',
+  }
+];
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +30,7 @@ export async function GET(request: NextRequest) {
     console.log('Running mock order status check cron job');
     
     // Log how many orders would be checked
-    const processingOrders = mockOrders.filter((order: any) => order.status === 'processing');
+    const processingOrders = mockOrders.filter((order) => order.status === 'processing');
     console.log(`Would check ${processingOrders.length} processing orders`);
     
     // Return success response
