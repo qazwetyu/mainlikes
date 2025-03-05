@@ -5,7 +5,7 @@ import { HeartIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { db } from '@/src/lib/firebase';
 import ServiceCard from "@/components/ServiceCard";
-import PaymentButton from "@/app/components/PaymentButton";
+import PaymentButton from "../components/PaymentButton";
 
 const services = [
   {
