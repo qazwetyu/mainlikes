@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminToken } from '@/lib/utils/auth';
+import { verifyAdminToken } from '../../../lib/utils/auth';
 
 export async function GET(request: NextRequest) {
   // Log all cookies for debugging
