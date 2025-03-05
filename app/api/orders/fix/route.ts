@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
-import { createSMMOrder } from '@/lib/api/smm';
+import { adminDb } from '../../../lib/firebase-admin';
+import { createSMMOrder } from '../../../lib/api/smm';
 
 export async function GET(request: NextRequest) {
   try {

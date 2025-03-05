@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSMMOrder } from '@/lib/api/smm';
+import { createSMMOrder } from '../../../lib/api/smm';
 
 export async function GET(request: NextRequest) {
   try {

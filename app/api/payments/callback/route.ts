@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyPayment } from '@/lib/api/payment';
-import { adminDb } from '@/lib/firebase-admin';
+import { verifyPayment } from '../../../lib/api/payment';
+import { adminDb } from '../../../lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
