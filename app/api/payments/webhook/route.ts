@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { createSMMOrder } from '@/lib/api/smm';
 
-// Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
 
-// Define the webhook payload interface
 interface BylWebhookPayload {
   data: {
     client_reference_id: string;
@@ -35,81 +33,48 @@ interface OrderData {
 
 export async function POST(request: NextRequest) {
   try {
-    // Log the raw request for debugging
     const rawBody = await request.text();
-    console.log('Webhook raw payload:', rawBody);
+    const payload: BylWebhookPayload = JSON.parse(rawBody);
     
-    // Parse the request body
-    const payload = JSON.parse(rawBody);
-    console.log('Payment webhook received:', payload);
-    
-    // Extract order ID from the payload
-    const orderId = payload.data?.client_reference_id || payload.order_id || payload.reference;
-    
-    if (!orderId) {
-      console.error('No order ID found in webhook payload');
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Missing order ID in webhook' 
-      }, { status: 400 });
+    if (!payload?.data?.client_reference_id) {
+      return NextResponse.json({ success: false, message: 'Invalid payload' }, { status: 400 });
     }
     
-    console.log(`Processing webhook for order: ${orderId}`);
+    const { client_reference_id: orderId, status } = payload.data;
     
-    // Save order to Firebase
-    const orderRef = adminDb.collection('orders').doc(orderId);
-    
-    // First, check if the order already exists
-    const orderDoc = await orderRef.get();
-    if (orderDoc.exists) {
-      console.log(`Order ${orderId} already exists in database`);
-      return NextResponse.json({ 
-        success: true,
-        message: 'Order already processed',
-        orderId: orderId
-      });
+    if (status === 'complete') {
+      try {
+        // Шууд webhook сдагаас шинэ захиалга үүсгэнэ
+        const smmResult = await createSMMOrder({
+          service: payload.data.serviceId,
+          link: payload.data.username,
+          quantity: payload.data.amount
+        });
+
+        // Save order details to Firebase
+        const orderRef = adminDb.collection('orders').doc(orderId);
+        await orderRef.set({
+          orderId: orderId,
+          paymentData: payload,
+          smmOrderId: smmResult.orderId,
+          status: 'processing',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+
+        return NextResponse.json({ 
+          success: true,
+          smmOrderId: smmResult.orderId
+        });
+      } catch (error) {
+        console.error('Error processing order:', error);
+        return NextResponse.json({ success: false }, { status: 500 });
+      }
     }
-    
-    // Process order with SMM provider
-    const smmOrderResult = await createSMMOrder({
-      service: payload.service_id || '1479', // Instagram Followers service ID
-      link: payload.target_link || 'https://instagram.com/default_user',
-      quantity: payload.quantity || 100
-    });
-    
-    // Save order details to Firebase
-    await orderRef.set({
-      orderId: orderId,
-      paymentData: payload,
-      smmOrderId: smmOrderResult.orderId,
-      status: 'processing',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-    
-    console.log('Created SMM order and saved to database:', smmOrderResult);
-    
-    return NextResponse.json({ 
-      success: true,
-      message: 'Webhook processed successfully',
-      orderId: orderId,
-      smmOrderId: smmOrderResult.orderId
-    });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Webhook processing error:', error);
-    return NextResponse.json({ 
-      success: false, 
-      message: 'Error processing webhook',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error('Webhook error:', error);
+    return NextResponse.json({ success: false }, { status: 500 });
   }
 }
-
-export async function GET() {
-  // Return a simple response for GET requests to this endpoint
-  return NextResponse.json({
-    success: true,
-    message: 'BYL webhook receiver is active',
-    timestamp: new Date().toISOString()
-  });
-} 
