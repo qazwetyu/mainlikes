@@ -8,13 +8,17 @@ interface PaymentButtonProps {
   serviceName: string;
   price: number;
   buttonText?: string;
+  username?: string;
+  quantity?: number;
 }
 
 export default function PaymentButton({ 
   serviceId, 
   serviceName, 
   price, 
-  buttonText = "Худалдаж авах" 
+  buttonText = "Худалдаж авах",
+  username = '',
+  quantity = 0
 }: PaymentButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +28,7 @@ export default function PaymentButton({
     setError(null);
 
     try {
-      console.log('Creating payment with:', { serviceId, serviceName, price });
+      console.log('Creating payment with:', { serviceId, serviceName, price, username, quantity });
       
       // Create order in your backend
       const response = await fetch('/api/payments/create', {
@@ -37,7 +41,9 @@ export default function PaymentButton({
           description: serviceName,
           orderId: `order-${Date.now()}`,
           serviceType: serviceId,
-          serviceName: serviceName
+          serviceName: serviceName,
+          targetUrl: username,
+          quantity: quantity || (serviceId === 'followers' ? 1000 : 100)
         }),
       });
 

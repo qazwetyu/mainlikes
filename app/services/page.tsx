@@ -239,6 +239,8 @@ export default function Services() {
               serviceName={selectedService.title}
               price={selectedPackage?.price || 0}
               buttonText={loadingServiceId === selectedService.id ? "Боловсруулж байна..." : "Худалдаж авах"}
+              username={username}
+              quantity={selectedPackage?.amount}
             />
           </div>
         </motion.form>
