@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get params
     const orderId = request.nextUrl.searchParams.get('orderId');
+    const formatInstagram = request.nextUrl.searchParams.get('formatInstagram') === 'true';
     
     if (!orderId) {
       return NextResponse.json({
@@ -30,12 +31,12 @@ export async function GET(request: NextRequest) {
         console.log(`Found existing order: ${JSON.stringify(orderData)}`);
         
         // Use order data if available
-        targetUrl = orderData.targetUrl || targetUrl;
-        serviceId = orderData.serviceId || serviceId;
-        amount = orderData.amount || amount;
-        quantity = orderData.quantity || quantity;
+        targetUrl = targetUrl || orderData.targetUrl || 'https://instagram.com/example';
+        serviceId = serviceId || orderData.serviceId || '1479';
+        amount = amount || orderData.amount || 2000;
+        quantity = quantity || orderData.quantity || 100;
         
-        console.log(`Using order data: targetUrl=${targetUrl}, serviceId=${serviceId}, amount=${amount}`);
+        console.log(`Using order data: targetUrl=${targetUrl}, serviceId=${serviceId}, amount=${amount}, quantity=${quantity}, formatInstagram=${formatInstagram}`);
       } else {
         console.log(`Order ${orderId} not found, using default values`);
       }
@@ -43,6 +44,10 @@ export async function GET(request: NextRequest) {
       console.error(`Error getting order data: ${error instanceof Error ? error.message : String(error)}`);
       // Continue with defaults
     }
+
+    // If formatInstagram is true, don't pre-format the targetUrl as it will be done by the SMM API
+    // This way the user can test both formats
+    const metadataTargetUrl = targetUrl;
     
     // Create a sample BYL webhook payload
     const webhookPayload = {
@@ -65,7 +70,7 @@ export async function GET(request: NextRequest) {
                   name: "Instagram Followers",
                   metadata: {
                     serviceId: serviceId,
-                    targetUrl: targetUrl,
+                    targetUrl: metadataTargetUrl,
                     quantity: quantity
                   }
                 }

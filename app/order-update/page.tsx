@@ -11,6 +11,7 @@ export default function OrderUpdatePage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
+  const [formatInstagram, setFormatInstagram] = useState(false);
 
   // Common services
   const services = [
@@ -122,7 +123,7 @@ export default function OrderUpdatePage() {
     setMessage('');
     
     try {
-      const response = await fetch(`/api/payments/test-webhook?orderId=${orderId}&targetUrl=${encodeURIComponent(username)}&serviceId=${serviceId}&quantity=${quantity}`);
+      const response = await fetch(`/api/payments/test-webhook?orderId=${orderId}&targetUrl=${encodeURIComponent(username)}&serviceId=${serviceId}&quantity=${quantity}&formatInstagram=${formatInstagram}`);
       const data = await response.json();
       
       if (data.success) {
@@ -236,6 +237,23 @@ export default function OrderUpdatePage() {
             className="w-full p-2 border border-gray-300 rounded"
             min="1"
           />
+        </div>
+
+        <div className="mb-6">
+          <label className="flex items-center text-gray-700">
+            <input
+              type="checkbox"
+              checked={formatInstagram}
+              onChange={(e) => setFormatInstagram(e.target.checked)}
+              className="mr-2"
+            />
+            Auto-format Instagram username (add instagram.com/)
+          </label>
+          <p className="text-xs text-gray-500 mt-1">
+            {formatInstagram 
+              ? "Username will be sent as: https://instagram.com/" + username 
+              : "Username will be sent exactly as entered: " + username}
+          </p>
         </div>
 
         <div className="flex space-x-4">

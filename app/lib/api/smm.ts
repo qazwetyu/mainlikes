@@ -115,8 +115,27 @@ export async function createSMMOrder(
   link: string, 
   quantity: number
 ) {
+  // Format the link properly for Instagram services
+  let formattedLink = link;
+  
+  // Check if this is an Instagram service and handle username formatting
+  if (serviceId === '1479' || serviceId.includes('instagram') || serviceId.includes('insta')) {
+    // Only add instagram.com prefix if it's not already there
+    if (!formattedLink.includes('instagram.com/') && !formattedLink.includes('instagr.am/')) {
+      // Remove @ if present
+      if (formattedLink.startsWith('@')) {
+        formattedLink = formattedLink.substring(1);
+      }
+      // Add the proper Instagram URL format
+      formattedLink = `https://instagram.com/${formattedLink}`;
+    }
+  }
+  
+  // Log the original and formatted links for debugging
+  console.log(`Formatting link: "${link}" -> "${formattedLink}"`);
+  
   if (useMock) {
-    console.log(`Using mock SMM API for order creation: service=${serviceId}, link=${link}, quantity=${quantity}`);
+    console.log(`Using mock SMM API for order creation: service=${serviceId}, link=${formattedLink}, quantity=${quantity}`);
     
     // In development/build, return a mock response with a clearly marked mock ID
     return {
@@ -126,7 +145,7 @@ export async function createSMMOrder(
   }
   
   try {
-    console.log(`Making real SMM API order: service=${serviceId}, link=${link}, quantity=${quantity}`);
+    console.log(`Making real SMM API order: service=${serviceId}, link=${formattedLink}, quantity=${quantity}`);
     
     // Validate API key
     if (!smmApiConfig.apiKey) {
@@ -143,7 +162,7 @@ export async function createSMMOrder(
         key: smmApiConfig.apiKey,
         action: 'add',
         service: serviceId,
-        link: link,
+        link: formattedLink,
         quantity: quantity
       })
     });

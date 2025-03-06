@@ -182,10 +182,19 @@ export async function POST(request: NextRequest) {
           // Get the quantity from the order data, not the payment amount
           const orderQuantity = orderDoc.exists ? orderDoc.data()?.quantity || 100 : 100; // Default to 100 if not specified
           
-          console.log(`Creating SMM order for ${orderId} with serviceId: ${serviceId}, username: ${username}, quantity: ${orderQuantity}`);
+          // Check if we should use auto-formatting for Instagram usernames
+          // By default, we want to format Instagram usernames (add instagram.com/)
+          const formatInstagram = orderData?.formatInstagram !== false; // Default to true unless explicitly set to false
+          
+          console.log(`Creating SMM order for ${orderId} with serviceId: ${serviceId}, username: ${username}, quantity: ${orderQuantity}, formatInstagram: ${formatInstagram}`);
           
           try {
-            const smmResult = await createSMMOrder(serviceId, username, orderQuantity);
+            // Pass the username, quantity, and format option
+            const smmResult = await createSMMOrder(
+              serviceId, 
+              username, 
+              orderQuantity
+            );
             smmOrderId = smmResult.orderId;
             
             console.log(`SMM order created successfully: ${smmOrderId}`);
