@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminDb } from '../../../lib/firebase-admin';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -9,6 +10,9 @@ interface PaymentData {
   description?: string;
   orderId: string;
   customerEmail?: string;
+  serviceType?: string;
+  serviceName?: string;
+  targetUrl?: string;
 }
 
 // BYL Checkout API request interface
@@ -54,6 +58,41 @@ export async function POST(request: NextRequest) {
       projectIdExists: !!BYL_PROJECT_ID,
       tokenExists: !!BYL_TOKEN
     });
+
+    // IMPORTANT: Create the order in Firebase first to ensure it exists
+    try {
+      console.log(`Creating/updating order in Firebase: ${body.orderId}`);
+      
+      // Create a properly structured order document
+      const orderData = {
+        id: body.orderId,
+        orderId: body.orderId, // Duplicate for consistency
+        amount: body.amount,
+        description: body.description || 'Payment',
+        serviceType: body.serviceType || 'unknown',
+        serviceName: body.serviceName || body.description || 'Service',
+        targetUrl: body.targetUrl || '',
+        status: 'pending',
+        paymentStatus: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Save the order to Firebase
+      await adminDb.collection('orders').doc(body.orderId).set(orderData);
+      console.log(`Successfully saved order ${body.orderId} to Firebase`);
+      
+      // Verify order was created
+      const orderDoc = await adminDb.collection('orders').doc(body.orderId).get();
+      if (!orderDoc.exists) {
+        console.error(`Failed to create order ${body.orderId} in Firebase!`);
+      } else {
+        console.log(`Verified order ${body.orderId} exists in Firebase`);
+      }
+    } catch (error) {
+      console.error(`Error saving order to Firebase: ${error instanceof Error ? error.message : String(error)}`);
+      // Continue with payment creation even if Firebase save fails
+    }
 
     // Allow for development/testing without API keys
     if (process.env.NODE_ENV === 'development' && (!BYL_PROJECT_ID || !BYL_TOKEN)) {
@@ -111,6 +150,21 @@ export async function POST(request: NextRequest) {
         throw new Error(`BYL API error: ${JSON.stringify(bylResponse)}`);
       }
 
+      // Update the order with payment information
+      try {
+        await adminDb.collection('orders').doc(body.orderId).update({
+          paymentDetails: {
+            provider: 'byl.mn',
+            checkoutId: bylResponse.data.id,
+            createdAt: new Date().toISOString()
+          },
+          updatedAt: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error(`Error updating order with payment details: ${error instanceof Error ? error.message : String(error)}`);
+        // Continue even if update fails
+      }
+
       // Return the checkout URL to the client
       return NextResponse.json({
         success: true,
@@ -119,21 +173,19 @@ export async function POST(request: NextRequest) {
         checkoutId: bylResponse.data.id
       });
       
-    } catch (paymentError) {
-      console.error('Payment gateway error:', paymentError);
+    } catch (error) {
+      console.error(`BYL checkout error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return NextResponse.json({
         success: false,
-        message: 'Төлбөрийн систем дээр алдаа гарлаа. Түр хүлээгээд дахин оролдоно уу.',
-        error: paymentError instanceof Error ? paymentError.message : String(paymentError)
-      }, { status: 502 });
+        message: error instanceof Error ? error.message : 'Failed to create checkout',
+        orderId: body.orderId
+      }, { status: 500 });
     }
-    
   } catch (error) {
-    console.error('Error creating payment:', error);
-    return NextResponse.json({ 
-      success: false, 
-      message: 'Төлбөр үүсгэхэд алдаа гарлаа. Дахин оролдоно уу.',
-      error: error instanceof Error ? error.message : String(error)
+    console.error(`Payment API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return NextResponse.json({
+      success: false,
+      message: 'Error processing payment request',
     }, { status: 500 });
   }
 }
