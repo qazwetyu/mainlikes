@@ -1,41 +1,29 @@
 /**
- * SMM API integration that uses a mock in build/development 
- * and real implementation in production
+ * SMM API integration for production use
  */
 
 import { smmServices } from '../config/smm-services';
 
-// Check if we're running in Vercel production environment
-const isVercelProduction = process.env.VERCEL_ENV === 'production';
+// Always use real implementation by default
+const useMock = false; // Set to false to force real implementation
 
-// Log environment variables for debugging
-console.log('SMM API environment:', {
-  nodeEnv: process.env.NODE_ENV,
-  vercelEnv: process.env.VERCEL_ENV,
-  hasApiKey: !!process.env.SMM_API_KEY,
-  isProduction: isVercelProduction
+// Log configuration
+console.log('SMM API Configuration:', {
+  isUsingMock: useMock,
+  apiKeyPresent: !!process.env.SMM_API_KEY,
+  apiUrlPresent: !!process.env.SMM_API_URL
 });
-
-// Use mock unless we're explicitly in production with API key
-const useMock = !isVercelProduction || !process.env.SMM_API_KEY;
 
 // Configuration
 export const smmApiConfig = {
-  apiKey: process.env.SMM_API_KEY || 'a4aec5771caf44d5de21c1f9a003296a', // Dummy key for development
+  apiKey: process.env.SMM_API_KEY || '', // Will cause an error if not provided
   apiUrl: process.env.SMM_API_URL || 'https://smmapro.com/api/v2',
 };
-
-// Log the API configuration (without showing the full key)
-console.log('SMM API Configuration:', {
-  apiUrl: smmApiConfig.apiUrl,
-  apiKeyPresent: !!smmApiConfig.apiKey,
-  apiKeyPrefix: smmApiConfig.apiKey ? smmApiConfig.apiKey.substring(0, 4) + '...' : 'none'
-});
 
 // Check order status
 export async function checkSMMOrder(orderId: string) {
   if (useMock) {
-    console.log(`SMM API: Checking order status for ${orderId}`);
+    console.log(`WARNING: Using mock SMM API for order status check: ${orderId}`);
     
     // In development/build, return a mock response
     return {
@@ -49,8 +37,12 @@ export async function checkSMMOrder(orderId: string) {
   try {
     console.log(`Making real SMM API status check for order: ${orderId}`);
     
+    // Validate API key
+    if (!smmApiConfig.apiKey) {
+      throw new Error('SMM API key is missing. Please set the SMM_API_KEY environment variable.');
+    }
+    
     // Real implementation for production
-    // Most SMM APIs use a single endpoint with action parameter
     const response = await fetch(smmApiConfig.apiUrl, {
       method: 'POST',
       headers: {
@@ -90,7 +82,7 @@ export async function createSMMOrder(
   quantity: number
 ) {
   if (useMock) {
-    console.log(`SMM API: Creating order with service=${serviceId}, link=${link}, quantity=${quantity}`);
+    console.log(`WARNING: Using mock SMM API for order creation: service=${serviceId}, link=${link}, quantity=${quantity}`);
     
     // In development/build, return a mock response
     return {
@@ -101,6 +93,11 @@ export async function createSMMOrder(
   
   try {
     console.log(`Making real SMM API order: service=${serviceId}, link=${link}, quantity=${quantity}`);
+    
+    // Validate API key
+    if (!smmApiConfig.apiKey) {
+      throw new Error('SMM API key is missing. Please set the SMM_API_KEY environment variable.');
+    }
     
     // Real implementation for production
     const response = await fetch(smmApiConfig.apiUrl, {
@@ -143,7 +140,7 @@ export async function createSMMOrder(
 // Get list of available services
 export async function getSMMServices() {
   if (useMock) {
-    console.log('SMM API: Fetching available services');
+    console.log('WARNING: Using mock SMM API for getting services');
     
     // In development/build, return a mock response
     return [
@@ -170,6 +167,11 @@ export async function getSMMServices() {
   
   try {
     console.log('Making real SMM API services request');
+    
+    // Validate API key
+    if (!smmApiConfig.apiKey) {
+      throw new Error('SMM API key is missing. Please set the SMM_API_KEY environment variable.');
+    }
     
     // Real implementation for production
     const response = await fetch(smmApiConfig.apiUrl, {

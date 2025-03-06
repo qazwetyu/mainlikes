@@ -1,30 +1,25 @@
 /**
- * Firebase Admin SDK implementation that uses a mock in build/development 
- * and real implementation in production
+ * Firebase Admin SDK implementation for production use
  */
 
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Check if we're running in Vercel production environment
-const isVercelProduction = process.env.VERCEL_ENV === 'production';
+// Always use real implementation by default
+const useMock = false; // Set to false to force real implementation
 
-// Log environment variables for debugging (without showing sensitive values)
-console.log('Environment status:', {
-  nodeEnv: process.env.NODE_ENV,
-  vercelEnv: process.env.VERCEL_ENV,
-  hasFirebaseKey: !!process.env.FIREBASE_ADMIN_PRIVATE_KEY,
-  isProduction: isVercelProduction
+// Log configuration
+console.log('Firebase Admin Configuration:', {
+  isUsingMock: useMock,
+  hasFirebaseKeys: !!process.env.FIREBASE_ADMIN_PRIVATE_KEY,
+  projectIdPresent: !!process.env.FIREBASE_ADMIN_PROJECT_ID
 });
-
-// Use mock unless we're explicitly in Vercel production with Firebase credentials
-const useMock = !isVercelProduction || !process.env.FIREBASE_ADMIN_PRIVATE_KEY;
 
 // Initialize the admin database
 let adminDb: any;
 
 if (useMock) {
-  console.log('Using mock Firebase Admin SDK for build/development');
+  console.log('WARNING: Using mock Firebase Admin SDK (should only be used for development)');
   
   // Mock Firestore operations
   adminDb = {
@@ -98,6 +93,7 @@ if (useMock) {
       console.log('Firebase Admin initialized successfully');
     } catch (error) {
       console.error('Error initializing Firebase Admin:', error);
+      throw new Error('Failed to initialize Firebase Admin. Check your environment variables.');
     }
   }
   
