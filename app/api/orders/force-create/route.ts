@@ -18,11 +18,11 @@ export async function GET(request: NextRequest) {
     }
     
     // Create the order in the SMM system
-    const result = await createSMMOrder({
+    const result = await createSMMOrder(
       service,
       link,
       quantity
-    });
+    );
     
     // For debugging
     console.log(`Manually created SMM order for ${orderId}:`, result);

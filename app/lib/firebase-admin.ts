@@ -15,6 +15,7 @@ export const adminDb = {
           return {
             id,
             status: 'processing',
+            smmOrderId: path.includes('orders') ? `smm-mock-${Date.now()}` : undefined,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };

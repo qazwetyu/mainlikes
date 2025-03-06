@@ -35,11 +35,11 @@ export async function GET(request: NextRequest) {
     }
     
     // Create SMM order
-    const smmOrderResult = await createSMMOrder({
-      service: serviceId,
-      link: targetLink,
-      quantity: quantity
-    });
+    const smmOrderResult = await createSMMOrder(
+      serviceId,
+      targetLink,
+      quantity
+    );
     
     console.log('SMM API response:', smmOrderResult);
     
