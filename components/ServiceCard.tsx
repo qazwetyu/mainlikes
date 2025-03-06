@@ -31,7 +31,7 @@ export default function ServiceCard({ id, name, description, price, imageUrl }: 
             serviceId={id}
             serviceName={name}
             price={price}
-            buttonText="Buy Now"
+            buttonText="Худалдаж авах"
           />
         </div>
       </div>
