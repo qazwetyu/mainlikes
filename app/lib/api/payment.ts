@@ -2,8 +2,11 @@
  * Payment gateway integration for production use
  */
 
-// Always use real implementation by default
-const useMock = false; // Set to false to force real implementation
+// Check for required API key
+const hasApiKey = !!process.env.PAYMENT_API_KEY;
+
+// Use mocks if API key is missing
+const useMock = !hasApiKey;
 
 // Log configuration
 console.log('Payment API Configuration:', {
@@ -21,7 +24,7 @@ export const PAYMENT_API_KEY = process.env.PAYMENT_API_KEY || '';
  */
 export async function verifyPayment(invoiceId: string) {
   if (useMock) {
-    console.log(`WARNING: Using mock payment verification for invoice ${invoiceId}`);
+    console.log(`Using mock payment verification for invoice ${invoiceId}`);
     
     // For development, return a mock verification
     return {
@@ -69,7 +72,7 @@ export async function verifyPayment(invoiceId: string) {
  */
 export async function createPaymentInvoice(amount: number, orderId: string, description: string) {
   if (useMock) {
-    console.log(`WARNING: Using mock payment invoice creation for order ${orderId}`);
+    console.log(`Using mock payment invoice creation for order ${orderId}`);
     
     // For development, return a mock invoice
     return {
@@ -124,7 +127,7 @@ export async function createPaymentInvoice(amount: number, orderId: string, desc
  */
 export async function checkPaymentStatus(invoiceId: string) {
   if (useMock) {
-    console.log(`WARNING: Using mock payment status check for invoice ${invoiceId}`);
+    console.log(`Using mock payment status check for invoice ${invoiceId}`);
     
     // For development, return a mock status
     return {

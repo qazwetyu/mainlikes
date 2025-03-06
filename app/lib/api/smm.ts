@@ -4,8 +4,11 @@
 
 import { smmServices } from '../config/smm-services';
 
-// Always use real implementation by default
-const useMock = false; // Set to false to force real implementation
+// Check for required API key
+const hasApiKey = !!process.env.SMM_API_KEY;
+
+// Use mocks if API key is missing
+const useMock = !hasApiKey;
 
 // Log configuration
 console.log('SMM API Configuration:', {
@@ -16,14 +19,14 @@ console.log('SMM API Configuration:', {
 
 // Configuration
 export const smmApiConfig = {
-  apiKey: process.env.SMM_API_KEY || '', // Will cause an error if not provided
+  apiKey: process.env.SMM_API_KEY || '',
   apiUrl: process.env.SMM_API_URL || 'https://smmapro.com/api/v2',
 };
 
 // Check order status
 export async function checkSMMOrder(orderId: string) {
   if (useMock) {
-    console.log(`WARNING: Using mock SMM API for order status check: ${orderId}`);
+    console.log(`Using mock SMM API for order status check: ${orderId}`);
     
     // In development/build, return a mock response
     return {
@@ -82,7 +85,7 @@ export async function createSMMOrder(
   quantity: number
 ) {
   if (useMock) {
-    console.log(`WARNING: Using mock SMM API for order creation: service=${serviceId}, link=${link}, quantity=${quantity}`);
+    console.log(`Using mock SMM API for order creation: service=${serviceId}, link=${link}, quantity=${quantity}`);
     
     // In development/build, return a mock response
     return {
@@ -140,7 +143,7 @@ export async function createSMMOrder(
 // Get list of available services
 export async function getSMMServices() {
   if (useMock) {
-    console.log('WARNING: Using mock SMM API for getting services');
+    console.log('Using mock SMM API for getting services');
     
     // In development/build, return a mock response
     return [

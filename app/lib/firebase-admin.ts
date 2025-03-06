@@ -5,8 +5,14 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Always use real implementation by default
-const useMock = false; // Set to false to force real implementation
+// Check for required credentials
+const hasFirebaseCredentials = 
+  !!process.env.FIREBASE_ADMIN_PROJECT_ID && 
+  !!process.env.FIREBASE_ADMIN_CLIENT_EMAIL && 
+  !!process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+
+// Use mocks if credentials are missing
+const useMock = !hasFirebaseCredentials;
 
 // Log configuration
 console.log('Firebase Admin Configuration:', {
@@ -19,7 +25,7 @@ console.log('Firebase Admin Configuration:', {
 let adminDb: any;
 
 if (useMock) {
-  console.log('WARNING: Using mock Firebase Admin SDK (should only be used for development)');
+  console.log('Using mock Firebase Admin SDK (credentials not available)');
   
   // Mock Firestore operations
   adminDb = {

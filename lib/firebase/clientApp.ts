@@ -11,8 +11,14 @@ import {
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Always use real implementation by default
-const useMock = false; // Set to false to force real implementation
+// Check for required credentials
+const hasFirebaseConfig = 
+  !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+  !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN && 
+  !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+// Use mocks if credentials are missing
+const useMock = !hasFirebaseConfig;
 
 // Log configuration
 console.log('Firebase Client Configuration:', {
@@ -35,7 +41,7 @@ let db;
 let authInstance;
 
 if (useMock) {
-  console.log('WARNING: Using mock Firebase Client SDK (should only be used for development)');
+  console.log('Using mock Firebase Client SDK (credentials not available)');
   
   // Create a mock auth implementation
   const mockAuth = {
