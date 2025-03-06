@@ -179,10 +179,13 @@ export async function POST(request: NextRequest) {
         
         // Create a new SMM order if we have enough information
         if (serviceId && username) {
-          console.log(`Creating SMM order for ${orderId} with serviceId: ${serviceId}, username: ${username}, amount: ${amount}`);
+          // Get the quantity from the order data, not the payment amount
+          const orderQuantity = orderDoc.exists ? orderDoc.data()?.quantity || 100 : 100; // Default to 100 if not specified
+          
+          console.log(`Creating SMM order for ${orderId} with serviceId: ${serviceId}, username: ${username}, quantity: ${orderQuantity}`);
           
           try {
-            const smmResult = await createSMMOrder(serviceId, username, amount);
+            const smmResult = await createSMMOrder(serviceId, username, orderQuantity);
             smmOrderId = smmResult.orderId;
             
             console.log(`SMM order created successfully: ${smmOrderId}`);
