@@ -180,7 +180,8 @@ export async function POST(request: NextRequest) {
         // Create a new SMM order if we have enough information
         if (serviceId && username) {
           // Get the quantity from the order data, not the payment amount
-          const orderQuantity = orderDoc.exists ? orderDoc.data()?.quantity || 100 : 100; // Default to 100 if not specified
+          const orderData = orderDoc.exists ? orderDoc.data() : null;
+          const orderQuantity = orderData?.quantity || 100; // Default to 100 if not specified
           
           // Check if we should use auto-formatting for Instagram usernames
           // By default, we want to format Instagram usernames (add instagram.com/)
