@@ -3,7 +3,12 @@
  */
 
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { 
+  getAuth, 
+  signInWithEmailAndPassword as firebaseSignIn, 
+  signOut as firebaseSignOut,
+  onAuthStateChanged as firebaseAuthStateChanged
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Always use real implementation by default
@@ -25,14 +30,15 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-let auth;
-let firestore;
+let app;
+let db;
+let authInstance;
 
 if (useMock) {
   console.log('WARNING: Using mock Firebase Client SDK (should only be used for development)');
   
-  // Mock Firebase Auth
-  auth = {
+  // Create a mock auth implementation
+  const mockAuth = {
     onAuthStateChanged: (callback: (user: any) => void) => {
       // Simulate no user for builds
       callback(null);
@@ -49,7 +55,7 @@ if (useMock) {
   };
   
   // Mock Firestore
-  firestore = {
+  db = {
     collection: (path: string) => ({
       doc: (id: string) => ({
         get: async () => ({
@@ -89,20 +95,37 @@ if (useMock) {
       }),
     }),
   };
+  
+  authInstance = mockAuth;
 } else {
   console.log('Initializing real Firebase Client SDK');
   
   try {
     // Check if Firebase is already initialized
     if (!getApps().length) {
-      initializeApp(firebaseConfig);
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApps()[0];
     }
     
-    // Initialize authentication
-    auth = getAuth();
-    
     // Initialize Firestore
-    firestore = getFirestore();
+    db = getFirestore(app);
+    
+    // Get Auth instance
+    const auth = getAuth(app);
+    
+    // Create a wrapper with the same interface as the mock
+    authInstance = {
+      onAuthStateChanged: (callback: (user: any) => void) => {
+        return firebaseAuthStateChanged(auth, callback);
+      },
+      signInWithEmailAndPassword: async (email: string, password: string) => {
+        return firebaseSignIn(auth, email, password);
+      },
+      signOut: async () => {
+        return firebaseSignOut(auth);
+      }
+    };
     
     console.log('Firebase Client SDK initialized successfully');
   } catch (error) {
@@ -113,6 +136,6 @@ if (useMock) {
 
 // Export the Firebase client
 export const firebaseClient = {
-  auth,
-  db: firestore,
+  auth: authInstance,
+  db: db,
 }; 

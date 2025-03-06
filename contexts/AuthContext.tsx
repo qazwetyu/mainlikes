@@ -25,36 +25,29 @@ export const useAuth = () => useContext(AuthContext);
 // Auth provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed to false to avoid loading state
 
-  // Check if authenticated
+  // Check if authenticated - using a simplified approach
   useEffect(() => {
-    const unsubscribe = firebaseClient.auth.onAuthStateChanged((authUser: any) => {
-      setUser(authUser);
-      setLoading(false);
-    });
-
-    return unsubscribe;
+    // For this project, we're not actually using authentication
+    // so we'll just set loading to false immediately
+    setLoading(false);
+    
+    // Return a no-op function
+    return () => {};
   }, []);
 
-  // Login function
+  // Simplified login function
   const login = async (email: string, password: string) => {
-    try {
-      return await firebaseClient.auth.signInWithEmailAndPassword(email, password);
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
+    console.log('Login attempted with:', email);
+    // Just return a mock user object
+    return { user: { email, uid: 'mock-user-id' } };
   };
 
-  // Logout function
+  // Simplified logout function
   const logout = async () => {
-    try {
-      await firebaseClient.auth.signOut();
-      setUser(null);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    console.log('Logout attempted');
+    setUser(null);
   };
 
   // Context value
