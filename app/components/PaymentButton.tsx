@@ -14,14 +14,18 @@ export default function PaymentButton({
   serviceId, 
   serviceName, 
   price, 
-  buttonText = "Buy Now" 
+  buttonText = "Худалдаж авах" 
 }: PaymentButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handlePayment = async () => {
     setLoading(true);
+    setError(null);
 
     try {
+      console.log('Creating payment with:', { serviceId, serviceName, price });
+      
       // Create order in your backend
       const response = await fetch('/api/payments/create', {
         method: 'POST',
@@ -29,37 +33,49 @@ export default function PaymentButton({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          serviceId,
-          serviceName,
-          price,
+          amount: price,
+          description: serviceName,
+          orderId: `order-${Date.now()}`,
+          serviceType: serviceId,
+          serviceName: serviceName
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to create payment');
+        throw new Error(data.message || 'Төлбөр үүсгэхэд алдаа гарлаа');
       }
 
       // Redirect to payment page
-      if (data.redirect) {
-        window.location.href = data.redirect;
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      } else {
+        throw new Error('Төлбөрийн холбоос байхгүй байна');
       }
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Payment processing error. Please try again.');
+      setError(error instanceof Error ? error.message : 'Төлбөр боловсруулахад алдаа гарлаа. Дахин оролдоно уу.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <button 
-      onClick={handlePayment} 
-      disabled={loading}
-      className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50"
-    >
-      {loading ? 'Processing...' : buttonText}
-    </button>
+    <div>
+      <button 
+        onClick={handlePayment} 
+        disabled={loading}
+        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50"
+      >
+        {loading ? 'Боловсруулж байна...' : buttonText}
+      </button>
+      
+      {error && (
+        <div className="mt-2 text-red-500 text-sm">
+          {error}
+        </div>
+      )}
+    </div>
   );
 } 
