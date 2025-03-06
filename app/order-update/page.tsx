@@ -16,7 +16,7 @@ export default function OrderUpdatePage() {
   // Common services
   const services = [
     { id: '1479', name: 'Instagram Followers' },
-    { id: '1480', name: 'Instagram Likes' },
+    { id: '951', name: 'Instagram Likes' },
     { id: '1481', name: 'Instagram Views' },
     { id: '1482', name: 'Instagram Comments' }
   ];

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '../components/ui/button';
+import { getServiceId } from '../lib/config/service-ids';
 
 interface PaymentButtonProps {
   serviceId: string;
@@ -28,7 +29,17 @@ export default function PaymentButton({
     setError(null);
 
     try {
-      console.log('Creating payment with:', { serviceId, serviceName, price, username, quantity });
+      // Get the correct SMM provider service ID based on our service type
+      const smmServiceId = getServiceId(serviceId);
+      
+      console.log('Creating payment with:', { 
+        serviceType: serviceId, 
+        smmServiceId, 
+        serviceName, 
+        price, 
+        username, 
+        quantity 
+      });
       
       // Create order in your backend
       const response = await fetch('/api/payments/create', {
@@ -43,7 +54,8 @@ export default function PaymentButton({
           serviceType: serviceId,
           serviceName: serviceName,
           targetUrl: username,
-          quantity: quantity || (serviceId === 'followers' ? 1000 : 100)
+          quantity: quantity || (serviceId === 'followers' ? 1000 : 100),
+          serviceId: smmServiceId // Use the mapped service ID
         }),
       });
 
