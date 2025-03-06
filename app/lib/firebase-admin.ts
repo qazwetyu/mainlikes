@@ -7,10 +7,22 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 // Function to properly format Firebase private key
 const formatPrivateKey = (key: string | undefined): string => {
-  if (!key) return '';
+  console.log('PRIVATE KEY DEBUG INFO:');
+  console.log('- Key provided:', !!key);
+  console.log('- Key length:', key?.length || 0);
+  console.log('- Has real newlines:', key?.includes('\n') || false);
+  console.log('- Has escaped newlines:', key?.includes('\\n') || false);
+  console.log('- First 10 chars:', key?.substring(0, 10));
+  console.log('- Last 10 chars:', key?.substring(key.length - 10));
+  
+  if (!key) {
+    console.error('No private key provided');
+    return '';
+  }
   
   // Return the key if it already contains actual newlines
   if (key.includes('\n') && !key.includes('\\n')) {
+    console.log('Key already has proper newlines, using as-is');
     return key;
   }
   
@@ -20,18 +32,67 @@ const formatPrivateKey = (key: string | undefined): string => {
     .replace(/"/g, '')          // Remove quotes if present
     .replace(/^\s+|\s+$/g, ''); // Trim whitespace
   
+  console.log('- After cleaning:');
+  console.log('  - Key length:', cleanKey.length);
+  console.log('  - Has real newlines:', cleanKey.includes('\n'));
+  console.log('  - First 20 chars:', cleanKey.substring(0, 20));
+  console.log('  - Last 20 chars:', cleanKey.substring(cleanKey.length - 20));
+  
   // Ensure it has the right format
   if (!cleanKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
     console.error('Invalid private key format: Key does not start with BEGIN PRIVATE KEY');
+    console.log('Actual start:', cleanKey.substring(0, 30));
     return '';
   }
   
   if (!cleanKey.endsWith('-----END PRIVATE KEY-----')) {
     console.error('Invalid private key format: Key does not end with END PRIVATE KEY');
+    console.log('Actual end:', cleanKey.substring(cleanKey.length - 30));
     return '';
   }
   
   return cleanKey;
+};
+
+// Try with alternative formatting approaches if the initial one fails
+const tryFormatPrivateKey = (key: string | undefined): string => {
+  if (!key) return '';
+  
+  // Try multiple approaches to format the key
+  const attempts = [
+    // Original approach
+    formatPrivateKey(key),
+    
+    // Try with double backslashes replaced
+    key.includes('\\\\n') ? formatPrivateKey(key.replace(/\\\\n/g, '\\n')) : '',
+    
+    // Try with quotes removed first
+    formatPrivateKey(key.replace(/^"|"$/g, '')),
+    
+    // Try with a more aggressive approach
+    key.replace(/\\n/g, '\n').replace(/"/g, '').trim(),
+    
+    // Last resort: manually rebuild the key with proper structure
+    `-----BEGIN PRIVATE KEY-----\n${
+      key.replace(/-----(BEGIN|END) PRIVATE KEY-----/g, '')
+         .replace(/\\n/g, '')
+         .replace(/"/g, '')
+         .trim()
+    }\n-----END PRIVATE KEY-----`
+  ];
+  
+  // Return the first non-empty result
+  for (const attempt of attempts) {
+    if (attempt && 
+        attempt.startsWith('-----BEGIN PRIVATE KEY-----') && 
+        attempt.endsWith('-----END PRIVATE KEY-----')) {
+      console.log('Successful key formatting with attempt #', attempts.indexOf(attempt) + 1);
+      return attempt;
+    }
+  }
+  
+  console.error('All private key formatting attempts failed');
+  return '';
 };
 
 // Log detailed info for debugging
@@ -118,7 +179,11 @@ if (useMock) {
     console.log('Initializing real Firebase Admin SDK');
     
     // Format the private key correctly
-    const privateKey = formatPrivateKey(process.env.FIREBASE_ADMIN_PRIVATE_KEY);
+    console.log('Raw env var for debugging:');
+    console.log(process.env.FIREBASE_ADMIN_PRIVATE_KEY?.substring(0, 50) + '...');
+    
+    // Use our enhanced multi-attempt formatter
+    const privateKey = tryFormatPrivateKey(process.env.FIREBASE_ADMIN_PRIVATE_KEY);
     
     if (!privateKey) {
       console.error('Private key formatting failed - using mock implementation');
