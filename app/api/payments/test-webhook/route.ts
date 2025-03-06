@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminDb } from '../../../lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,35 @@ export async function GET(request: NextRequest) {
         success: false,
         message: 'Missing orderId parameter'
       }, { status: 400 });
+    }
+    
+    // Try to get existing order data first
+    let targetUrl = request.nextUrl.searchParams.get('targetUrl') || 'https://instagram.com/example';
+    let serviceId = request.nextUrl.searchParams.get('serviceId') || '1479';
+    let amount = parseInt(request.nextUrl.searchParams.get('amount') || '2000', 10);
+    let quantity = parseInt(request.nextUrl.searchParams.get('quantity') || '1000', 10);
+    
+    try {
+      // Get the order if it exists
+      const orderDoc = await adminDb.collection('orders').doc(orderId).get();
+      
+      if (orderDoc.exists) {
+        const orderData = orderDoc.data();
+        console.log(`Found existing order: ${JSON.stringify(orderData)}`);
+        
+        // Use order data if available
+        targetUrl = orderData.targetUrl || targetUrl;
+        serviceId = orderData.serviceId || serviceId;
+        amount = orderData.amount || amount;
+        quantity = orderData.quantity || quantity;
+        
+        console.log(`Using order data: targetUrl=${targetUrl}, serviceId=${serviceId}, amount=${amount}`);
+      } else {
+        console.log(`Order ${orderId} not found, using default values`);
+      }
+    } catch (error) {
+      console.error(`Error getting order data: ${error instanceof Error ? error.message : String(error)}`);
+      // Continue with defaults
     }
     
     // Create a sample BYL webhook payload
@@ -30,13 +60,13 @@ export async function GET(request: NextRequest) {
           items: [
             {
               price: {
-                unit_amount: 2000,
+                unit_amount: amount,
                 product_data: {
                   name: "Instagram Followers",
                   metadata: {
-                    serviceId: "1479",
-                    targetUrl: "https://instagram.com/example",
-                    quantity: 1000
+                    serviceId: serviceId,
+                    targetUrl: targetUrl,
+                    quantity: quantity
                   }
                 }
               },
@@ -48,7 +78,7 @@ export async function GET(request: NextRequest) {
     };
     
     // Call our own webhook endpoint
-    console.log(`Sending test webhook for order: ${orderId}`);
+    console.log(`Sending test webhook for order: ${orderId} with targetUrl: ${targetUrl}`);
     
     const response = await fetch(
       `${request.nextUrl.origin}/api/payments/webhook`,
@@ -66,7 +96,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       orderId,
-      webhookPayload,
+      targetUrl,
+      serviceId,
+      amount,
       webhookResponse,
       status: response.status
     });

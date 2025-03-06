@@ -13,6 +13,9 @@ interface PaymentData {
   serviceType?: string;
   serviceName?: string;
   targetUrl?: string;
+  username?: string; // Add support for username parameter
+  quantity?: number; // Add support for quantity parameter
+  serviceId?: string | number; // Add support for service ID
 }
 
 // BYL Checkout API request interface
@@ -26,6 +29,13 @@ interface BylCheckoutRequest {
       product_data: {
         name: string;
         client_reference_id: string;
+        metadata?: {
+          serviceId?: string | number;
+          targetUrl?: string;
+          quantity?: number;
+          username?: string;
+          [key: string]: any;
+        };
       }
     };
     quantity: number;
@@ -59,6 +69,14 @@ export async function POST(request: NextRequest) {
       tokenExists: !!BYL_TOKEN
     });
 
+    // Get the target URL - try multiple fields to ensure we have a value
+    const targetUrl = body.targetUrl || body.username || '';
+    console.log(`Target URL for order ${body.orderId}: ${targetUrl}`);
+    
+    // Get service details
+    const serviceId = body.serviceId || '';
+    const quantity = body.quantity || 1000;
+
     // IMPORTANT: Create the order in Firebase first to ensure it exists
     try {
       console.log(`Creating/updating order in Firebase: ${body.orderId}`);
@@ -71,7 +89,9 @@ export async function POST(request: NextRequest) {
         description: body.description || 'Payment',
         serviceType: body.serviceType || 'unknown',
         serviceName: body.serviceName || body.description || 'Service',
-        targetUrl: body.targetUrl || '',
+        targetUrl: targetUrl, // Use the resolved target URL
+        serviceId: serviceId, // Store service ID
+        quantity: quantity, // Store quantity
         status: 'pending',
         paymentStatus: 'pending',
         createdAt: new Date().toISOString(),
@@ -87,7 +107,7 @@ export async function POST(request: NextRequest) {
       if (!orderDoc.exists) {
         console.error(`Failed to create order ${body.orderId} in Firebase!`);
       } else {
-        console.log(`Verified order ${body.orderId} exists in Firebase`);
+        console.log(`Verified order ${body.orderId} exists in Firebase with targetUrl: ${targetUrl}`);
       }
     } catch (error) {
       console.error(`Error saving order to Firebase: ${error instanceof Error ? error.message : String(error)}`);
@@ -108,6 +128,15 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      // Prepare metadata for the BYL checkout
+      const metadata = {
+        serviceId: serviceId,
+        targetUrl: targetUrl,
+        quantity: quantity
+      };
+      
+      console.log(`Order metadata for BYL: ${JSON.stringify(metadata)}`);
+      
       // Prepare the BYL API request with proper typing
       const bylRequestData: BylCheckoutRequest = {
         success_url: `${request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL}/payment/success?orderId=${body.orderId}`,
@@ -119,7 +148,8 @@ export async function POST(request: NextRequest) {
               unit_amount: body.amount,
               product_data: {
                 name: body.description || 'Social Media Marketing Service',
-                client_reference_id: body.orderId
+                client_reference_id: body.orderId,
+                metadata: metadata
               }
             },
             quantity: 1
@@ -156,7 +186,8 @@ export async function POST(request: NextRequest) {
           paymentDetails: {
             provider: 'byl.mn',
             checkoutId: bylResponse.data.id,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            metadata: metadata // Store metadata in payment details as well
           },
           updatedAt: new Date().toISOString()
         });
