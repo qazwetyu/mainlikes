@@ -1,7 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { firebaseClient } from '../lib/firebase/clientApp';
+import React, { createContext, useContext, useState } from 'react';
 
 // Define the auth context type
 export interface AuthContextType {
@@ -14,7 +13,7 @@ export interface AuthContextType {
 // Create the auth context
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  loading: true,
+  loading: false,
   login: async () => ({ user: null }),
   logout: async () => {}
 });
@@ -22,29 +21,36 @@ const AuthContext = createContext<AuthContextType>({
 // Custom hook to use the auth context
 export const useAuth = () => useContext(AuthContext);
 
+// Mock user for development
+const MOCK_USER = {
+  uid: 'mock-user-id',
+  email: 'admin@example.com',
+  displayName: 'Admin User',
+  isAdmin: true
+};
+
 // Auth provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false); // Changed to false to avoid loading state
+  const [loading, setLoading] = useState(false);
 
-  // Check if authenticated - using a simplified approach
-  useEffect(() => {
-    // For this project, we're not actually using authentication
-    // so we'll just set loading to false immediately
-    setLoading(false);
-    
-    // Return a no-op function
-    return () => {};
-  }, []);
-
-  // Simplified login function
+  // Simple login function that uses hardcoded credentials for admin access
   const login = async (email: string, password: string) => {
     console.log('Login attempted with:', email);
-    // Just return a mock user object
-    return { user: { email, uid: 'mock-user-id' } };
+    
+    // Simple validation for demo purposes
+    if (email === 'admin@example.com' && password === 'password') {
+      setUser(MOCK_USER);
+      return { user: MOCK_USER };
+    }
+    
+    // For any other credentials, return a mock user
+    const mockUser = { uid: 'user-' + Date.now(), email, displayName: email.split('@')[0] };
+    setUser(mockUser);
+    return { user: mockUser };
   };
 
-  // Simplified logout function
+  // Simple logout function
   const logout = async () => {
     console.log('Logout attempted');
     setUser(null);
