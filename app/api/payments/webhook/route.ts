@@ -4,10 +4,22 @@ import { createSMMOrder } from '../../../lib/api/smm';
 
 export const dynamic = 'force-dynamic';
 
+// Updated BYL Webhook payload interface to match actual structure
 interface BylWebhookPayload {
+  id: number;
+  project_id: number;
+  type: string; // e.g., "checkout.completed"
+  object: string; // e.g., "checkout"
   data: {
-    client_reference_id: string;
-    status: string;
+    object: {
+      id: number;
+      url: string;
+      mode: string;
+      status: string;
+      client_reference_id?: string;
+      items: any[];
+      [key: string]: any;
+    };
     [key: string]: any;
   };
   [key: string]: any;
@@ -34,16 +46,35 @@ interface OrderData {
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
-    console.log(`Webhook payload received: ${rawBody.substring(0, 200)}...`);
+    console.log(`Webhook payload received: ${rawBody.substring(0, 300)}...`);
     
     const payload: BylWebhookPayload = JSON.parse(rawBody);
+    console.log(`Webhook type: ${payload.type}`);
     
-    if (!payload?.data?.client_reference_id) {
+    // Extract the client reference ID from the correct location in the payload
+    const orderId = payload?.data?.object?.client_reference_id;
+    const status = payload?.data?.object?.status;
+    
+    if (!orderId) {
       console.error('Invalid webhook payload: missing client_reference_id');
-      return NextResponse.json({ success: false, message: 'Invalid payload' }, { status: 400 });
+      // Try to extract any useful information from the payload for debugging
+      const checkoutId = payload?.data?.object?.id;
+      console.log(`Checkout ID from payload: ${checkoutId}`);
+      
+      // Log more of the structure to understand it better
+      console.log('Payload structure:', JSON.stringify({
+        id: payload.id,
+        type: payload.type,
+        dataKeys: Object.keys(payload.data || {}),
+        objectKeys: Object.keys(payload.data?.object || {})
+      }));
+      
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Invalid payload: missing client_reference_id',
+        checkoutId
+      }, { status: 400 });
     }
-    
-    const { client_reference_id: orderId, status } = payload.data;
     
     console.log(`Processing webhook for order: ${orderId}, status: ${status}`);
     
@@ -51,13 +82,16 @@ export async function POST(request: NextRequest) {
     const orderRef = adminDb.collection('orders').doc(orderId);
     const orderDoc = await orderRef.get();
     
-    if (status === 'complete') {
+    // Handle different webhook types
+    if (payload.type === 'checkout.completed' || status === 'complete') {
       try {
         // Variables for SMM handling
         let smmOrderId;
-        let serviceId = payload.data.serviceId;
-        let username = payload.data.username;
-        let amount = payload.data.amount;
+        let serviceId = payload.data?.object?.items?.[0]?.price?.product_data?.metadata?.serviceId;
+        let username = payload.data?.object?.items?.[0]?.price?.product_data?.metadata?.targetUrl;
+        let amount = payload.data?.object?.items?.[0]?.price?.unit_amount;
+        
+        console.log(`Extracted from webhook: serviceId=${serviceId}, username=${username}, amount=${amount}`);
         
         // If order doesn't exist, create it
         if (!orderDoc.exists) {
@@ -69,7 +103,11 @@ export async function POST(request: NextRequest) {
             orderId: orderId,
             status: 'pending',
             paymentStatus: 'paid',
-            paymentData: payload,
+            paymentData: {
+              checkoutId: payload.data?.object?.id,
+              status: status,
+              items: payload.data?.object?.items
+            },
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           });
@@ -87,7 +125,11 @@ export async function POST(request: NextRequest) {
           // Update order with payment information
           await orderRef.update({
             paymentStatus: 'paid',
-            paymentData: payload,
+            paymentData: {
+              checkoutId: payload.data?.object?.id,
+              status: status,
+              items: payload.data?.object?.items
+            },
             paidAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           });
@@ -142,8 +184,8 @@ export async function POST(request: NextRequest) {
         }, { status: 500 });
       }
     } else {
-      // Handle other statuses (not complete)
-      console.log(`Order ${orderId} has status ${status}, updating in database`);
+      // Handle other webhook types (not checkout.completed)
+      console.log(`Order ${orderId} has status ${status}, webhook type: ${payload.type}`);
       
       try {
         // If order doesn't exist, create it
@@ -152,16 +194,24 @@ export async function POST(request: NextRequest) {
             id: orderId,
             orderId: orderId,
             status: 'pending',
-            paymentStatus: status === 'expired' ? 'expired' : 'pending',
-            paymentData: payload,
+            paymentStatus: payload.type === 'checkout.expired' ? 'expired' : 'pending',
+            paymentData: {
+              checkoutId: payload.data?.object?.id,
+              status: status,
+              items: payload.data?.object?.items
+            },
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           });
         } else {
           // Update existing order
           await orderRef.update({
-            paymentStatus: status === 'expired' ? 'expired' : 'pending',
-            paymentData: payload,
+            paymentStatus: payload.type === 'checkout.expired' ? 'expired' : 'pending',
+            paymentData: {
+              checkoutId: payload.data?.object?.id,
+              status: status,
+              items: payload.data?.object?.items
+            },
             updatedAt: new Date().toISOString()
           });
         }
