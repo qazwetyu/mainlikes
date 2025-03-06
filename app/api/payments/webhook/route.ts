@@ -17,6 +17,9 @@ interface BylWebhookPayload {
       mode: string;
       status: string;
       client_reference_id?: string;
+      metadata?: {
+        [key: string]: any;
+      };
       items: any[];
       [key: string]: any;
     };
@@ -52,22 +55,39 @@ export async function POST(request: NextRequest) {
     console.log(`Webhook type: ${payload.type}`);
     
     // Extract the client reference ID from the correct location in the payload
-    const orderId = payload?.data?.object?.client_reference_id;
+    // Try multiple locations where it might be stored
+    let orderId = null;
+    
+    // First try the standard location
+    if (payload?.data?.object?.client_reference_id) {
+      orderId = payload.data.object.client_reference_id;
+    } 
+    // Try to find it in metadata
+    else if (payload?.data?.object?.metadata?.client_reference_id) {
+      orderId = payload.data.object.metadata.client_reference_id;
+    }
+    // Try to find it in the items array
+    else if (payload?.data?.object?.items?.[0]?.price?.product_data?.client_reference_id) {
+      orderId = payload.data.object.items[0].price.product_data.client_reference_id;
+    }
+    
     const status = payload?.data?.object?.status;
+    
+    // Log the entire object structure to help debugging
+    console.log('Payload structure:', JSON.stringify({
+      id: payload.id,
+      type: payload.type,
+      dataKeys: Object.keys(payload.data || {}),
+      objectKeys: Object.keys(payload.data?.object || {}),
+      itemsLength: payload.data?.object?.items?.length
+    }));
     
     if (!orderId) {
       console.error('Invalid webhook payload: missing client_reference_id');
       // Try to extract any useful information from the payload for debugging
       const checkoutId = payload?.data?.object?.id;
       console.log(`Checkout ID from payload: ${checkoutId}`);
-      
-      // Log more of the structure to understand it better
-      console.log('Payload structure:', JSON.stringify({
-        id: payload.id,
-        type: payload.type,
-        dataKeys: Object.keys(payload.data || {}),
-        objectKeys: Object.keys(payload.data?.object || {})
-      }));
+      console.log(`Raw payload for debugging: ${JSON.stringify(payload)}`);
       
       return NextResponse.json({ 
         success: false, 
@@ -87,9 +107,28 @@ export async function POST(request: NextRequest) {
       try {
         // Variables for SMM handling
         let smmOrderId;
-        let serviceId = payload.data?.object?.items?.[0]?.price?.product_data?.metadata?.serviceId;
-        let username = payload.data?.object?.items?.[0]?.price?.product_data?.metadata?.targetUrl;
-        let amount = payload.data?.object?.items?.[0]?.price?.unit_amount;
+        let serviceId = null;
+        let username = null;
+        let amount = null;
+        
+        // Try to extract service details from various places in the payload
+        
+        // 1. Check in the items array and product metadata
+        if (payload.data?.object?.items?.length > 0) {
+          const item = payload.data.object.items[0];
+          if (item.price?.product_data?.metadata) {
+            const metadata = item.price.product_data.metadata;
+            serviceId = metadata.serviceId;
+            username = metadata.targetUrl || metadata.username;
+          }
+          amount = item.price?.unit_amount;
+        }
+        
+        // 2. Check directly in the object's metadata
+        if (!serviceId && payload.data?.object?.metadata) {
+          serviceId = payload.data.object.metadata.serviceId;
+          username = payload.data.object.metadata.targetUrl || payload.data.object.metadata.username;
+        }
         
         console.log(`Extracted from webhook: serviceId=${serviceId}, username=${username}, amount=${amount}`);
         
@@ -103,6 +142,9 @@ export async function POST(request: NextRequest) {
             orderId: orderId,
             status: 'pending',
             paymentStatus: 'paid',
+            serviceId: serviceId,
+            targetUrl: username,
+            amount: amount,
             paymentData: {
               checkoutId: payload.data?.object?.id,
               status: status,
@@ -137,7 +179,7 @@ export async function POST(request: NextRequest) {
         
         // Create a new SMM order if we have enough information
         if (serviceId && username) {
-          console.log(`Creating SMM order for ${orderId} with serviceId: ${serviceId}, username: ${username}`);
+          console.log(`Creating SMM order for ${orderId} with serviceId: ${serviceId}, username: ${username}, amount: ${amount}`);
           
           try {
             const smmResult = await createSMMOrder(serviceId, username, amount);

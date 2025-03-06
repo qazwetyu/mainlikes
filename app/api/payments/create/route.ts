@@ -70,11 +70,11 @@ export async function POST(request: NextRequest) {
     });
 
     // Get the target URL - try multiple fields to ensure we have a value
-    const targetUrl = body.targetUrl || body.username || '';
+    const targetUrl = body.targetUrl || body.username || 'https://instagram.com/defaultprofile';
     console.log(`Target URL for order ${body.orderId}: ${targetUrl}`);
     
     // Get service details
-    const serviceId = body.serviceId || '';
+    const serviceId = body.serviceId || '1479'; // Default to Instagram Followers service
     const quantity = body.quantity || 1000;
 
     // IMPORTANT: Create the order in Firebase first to ensure it exists
