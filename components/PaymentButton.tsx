@@ -14,7 +14,7 @@ export default function PaymentButton({
   serviceId, 
   serviceName, 
   price, 
-  buttonText = "Buy Now" 
+  buttonText = "Худалдаж авах" 
 }: PaymentButtonProps) {
   const [loading, setLoading] = useState(false);
 
@@ -38,7 +38,7 @@ export default function PaymentButton({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to create order');
+        throw new Error(data.message || 'Төлбөр үүсгэхэд алдаа гарлаа');
       }
 
       // Redirect to payment page
@@ -47,7 +47,7 @@ export default function PaymentButton({
       }
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Payment processing error. Please try again.');
+      alert('Төлбөр боловсруулахад алдаа гарлаа. Дахин оролдоно уу.');
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export default function PaymentButton({
       disabled={loading}
       className="w-full"
     >
-      {loading ? 'Processing...' : buttonText}
+      {loading ? 'Боловсруулж байна...' : buttonText}
     </Button>
   );
 } 

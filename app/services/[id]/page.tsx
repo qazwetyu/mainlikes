@@ -58,7 +58,7 @@ export default function ServiceDetailPage({ params }: { params: { id: string } }
                 serviceId={params.id}
                 serviceName={service?.name || 'Service'}
                 price={service?.price || 0}
-                buttonText="Buy Now"
+                buttonText="Худалдаж авах"
               />
             </div>
           </div>
