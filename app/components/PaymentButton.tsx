@@ -66,7 +66,10 @@ export default function PaymentButton({
       <button 
         onClick={handlePayment} 
         disabled={loading}
-        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50"
+        className="w-full px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 disabled:opacity-50 font-medium
+          bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500 
+          hover:from-purple-600 hover:via-pink-600 hover:to-yellow-600
+          transform hover:scale-105 transition-all duration-200"
       >
         {loading ? 'Боловсруулж байна...' : buttonText}
       </button>
