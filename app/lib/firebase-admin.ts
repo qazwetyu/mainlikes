@@ -6,10 +6,19 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Check if we need to use the mock implementation
-const useMock = process.env.NODE_ENV === 'development' || 
-                process.env.VERCEL_ENV === 'preview' ||
-                !process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+// Check if we're running in Vercel production environment
+const isVercelProduction = process.env.VERCEL_ENV === 'production';
+
+// Log environment variables for debugging (without showing sensitive values)
+console.log('Environment status:', {
+  nodeEnv: process.env.NODE_ENV,
+  vercelEnv: process.env.VERCEL_ENV,
+  hasFirebaseKey: !!process.env.FIREBASE_ADMIN_PRIVATE_KEY,
+  isProduction: isVercelProduction
+});
+
+// Use mock unless we're explicitly in Vercel production with Firebase credentials
+const useMock = !isVercelProduction || !process.env.FIREBASE_ADMIN_PRIVATE_KEY;
 
 // Initialize the admin database
 let adminDb: any;
