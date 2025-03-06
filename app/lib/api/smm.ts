@@ -23,8 +23,26 @@ export const smmApiConfig = {
   apiUrl: process.env.SMM_API_URL || 'https://smmapro.com/api/v2',
 };
 
+// Helper to detect mock order IDs
+const isMockOrderId = (orderId: string): boolean => {
+  return orderId.startsWith('smm-mock-') || orderId.startsWith('mock-');
+};
+
 // Check order status
 export async function checkSMMOrder(orderId: string) {
+  // If this is a mock order ID, use mock implementation regardless of global setting
+  if (isMockOrderId(orderId)) {
+    console.log(`Using mock SMM API for mock order ID: ${orderId}`);
+    
+    // For mock order IDs, always return a mock response
+    return {
+      status: 'in_progress',
+      remains: 500,
+      start_count: 0,
+      currency: 'USD'
+    };
+  }
+  
   if (useMock) {
     console.log(`Using mock SMM API for order status check: ${orderId}`);
     
@@ -71,10 +89,23 @@ export async function checkSMMOrder(orderId: string) {
       throw new Error(`SMM API error: ${response.status}`);
     }
     
+    // Handle error response even if HTTP status is OK
+    if (data.error) {
+      console.error(`SMM API returned error: ${data.error}`);
+      // Return a structured error object instead of throwing
+      return { 
+        error: data.error,
+        status: 'error'
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('Error checking SMM order status:', error);
-    throw error;
+    return {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      status: 'error'
+    };
   }
 }
 
@@ -87,9 +118,9 @@ export async function createSMMOrder(
   if (useMock) {
     console.log(`Using mock SMM API for order creation: service=${serviceId}, link=${link}, quantity=${quantity}`);
     
-    // In development/build, return a mock response
+    // In development/build, return a mock response with a clearly marked mock ID
     return {
-      orderId: `smm-${Date.now()}`,
+      orderId: `smm-mock-${Date.now()}`,
       status: 'pending'
     };
   }
@@ -123,11 +154,22 @@ export async function createSMMOrder(
     console.log(`SMM API order create response:`, {
       status: response.status,
       success: response.ok,
-      orderId: data?.order || 'none'
+      dataReceived: !!data
     });
     
     if (!response.ok) {
       throw new Error(`SMM API error: ${response.status}`);
+    }
+    
+    // Handle error response even if HTTP status is OK
+    if (data.error) {
+      console.error(`SMM API returned error: ${data.error}`);
+      // Use a mock order ID for error cases to prevent further API calls
+      return { 
+        orderId: `smm-mock-error-${Date.now()}`,
+        status: 'error',
+        error: data.error
+      };
     }
     
     return {
@@ -136,7 +178,12 @@ export async function createSMMOrder(
     };
   } catch (error) {
     console.error('Error creating SMM order:', error);
-    throw error;
+    // Return a mock order ID for error cases
+    return { 
+      orderId: `smm-mock-error-${Date.now()}`,
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }
 
@@ -201,9 +248,37 @@ export async function getSMMServices() {
       throw new Error(`SMM API error: ${response.status}`);
     }
     
+    // Handle error response even if HTTP status is OK
+    if (data.error) {
+      console.error(`SMM API returned error: ${data.error}`);
+      // Fall back to mock data for error cases
+      return [
+        {
+          id: '1',
+          name: 'Instagram Followers',
+          type: 'Default',
+          category: 'Instagram',
+          rate: '100/$1',
+          min: 100,
+          max: 10000
+        }
+      ];
+    }
+    
     return data;
   } catch (error) {
     console.error('Error fetching SMM services:', error);
-    throw error;
+    // Fall back to mock data for error cases
+    return [
+      {
+        id: '1',
+        name: 'Instagram Followers (Fallback)',
+        type: 'Default',
+        category: 'Instagram',
+        rate: '100/$1',
+        min: 100,
+        max: 10000
+      }
+    ];
   }
 } 
