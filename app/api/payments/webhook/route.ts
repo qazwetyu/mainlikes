@@ -51,6 +51,12 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text();
     console.log(`Webhook payload received: ${rawBody.substring(0, 300)}...`);
     
+    // Check if this is a test webhook
+    const isTestWebhook = request.headers.get('X-Test-Webhook') === 'true';
+    if (isTestWebhook) {
+      console.log('⚠️ THIS IS A TEST WEBHOOK - for testing purposes only ⚠️');
+    }
+    
     const payload: BylWebhookPayload = JSON.parse(rawBody);
     console.log(`Webhook type: ${payload.type}`);
     
@@ -187,34 +193,41 @@ export async function POST(request: NextRequest) {
           // By default, we want to format Instagram usernames (add instagram.com/)
           const formatInstagram = orderData?.formatInstagram !== false; // Default to true unless explicitly set to false
           
-          console.log(`Creating SMM order for ${orderId} with serviceId: ${serviceId}, username: ${username}, quantity: ${orderQuantity}, formatInstagram: ${formatInstagram}`);
-          
-          try {
-            // Pass the username, quantity, and format option
-            const smmResult = await createSMMOrder(
-              serviceId, 
-              username, 
-              orderQuantity
-            );
-            smmOrderId = smmResult.orderId;
+          // Important: Check if an SMM order has already been created for this order
+          // This prevents duplicate SMM orders when webhooks are processed multiple times
+          if (orderData?.smmOrderId) {
+            console.log(`SMM order already exists for ${orderId}: ${orderData.smmOrderId}. Skipping SMM order creation.`);
+            smmOrderId = orderData.smmOrderId;
+          } else {
+            console.log(`Creating SMM order for ${orderId} with serviceId: ${serviceId}, username: ${username}, quantity: ${orderQuantity}, formatInstagram: ${formatInstagram}`);
             
-            console.log(`SMM order created successfully: ${smmOrderId}`);
-            
-            // Update order with SMM order ID
-            await orderRef.update({
-              smmOrderId: smmOrderId,
-              status: 'processing',
-              updatedAt: new Date().toISOString()
-            });
-          } catch (smmError) {
-            console.error(`Error creating SMM order: ${smmError instanceof Error ? smmError.message : 'Unknown error'}`);
-            
-            // Still update the order but mark as 'smm-error'
-            await orderRef.update({
-              status: 'smm-error',
-              smmError: smmError instanceof Error ? smmError.message : 'Unknown SMM error',
-              updatedAt: new Date().toISOString()
-            });
+            try {
+              // Pass the username, quantity, and format option
+              const smmResult = await createSMMOrder(
+                serviceId, 
+                username, 
+                orderQuantity
+              );
+              smmOrderId = smmResult.orderId;
+              
+              console.log(`SMM order created successfully: ${smmOrderId}`);
+              
+              // Update order with SMM order ID
+              await orderRef.update({
+                smmOrderId: smmOrderId,
+                status: 'processing',
+                updatedAt: new Date().toISOString()
+              });
+            } catch (smmError) {
+              console.error(`Error creating SMM order: ${smmError instanceof Error ? smmError.message : 'Unknown error'}`);
+              
+              // Still update the order but mark as 'smm-error'
+              await orderRef.update({
+                status: 'smm-error',
+                smmError: smmError instanceof Error ? smmError.message : 'Unknown SMM error',
+                updatedAt: new Date().toISOString()
+              });
+            }
           }
         } else {
           console.warn(`Cannot create SMM order for ${orderId}: missing serviceId or username`);

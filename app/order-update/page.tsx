@@ -44,6 +44,12 @@ export default function OrderUpdatePage() {
           setQuantity(orderOp.data.quantity || 100);
           setMessage('Order found');
           setMessageType('success');
+          
+          // Check if order already has an SMM order ID
+          if (orderOp.data.smmOrderId) {
+            setMessage(`Order found - Already has SMM order ID: ${orderOp.data.smmOrderId}`);
+            setMessageType('warning');
+          }
         } else {
           setOrderData(null);
           setMessage('Order not found');
@@ -145,6 +151,51 @@ export default function OrderUpdatePage() {
     }
   };
 
+  // Clear SMM order ID to allow reprocessing
+  const clearSmmOrderId = async () => {
+    if (!orderId) {
+      setMessage('Please enter an order ID');
+      setMessageType('error');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+    
+    try {
+      const response = await fetch('/api/orders/update', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          orderId,
+          smmOrderId: null,
+          status: 'paid' // Reset to paid status
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setOrderData(data.order);
+        setMessage('SMM order ID cleared successfully');
+        setMessageType('success');
+        // Fetch the order again
+        setTimeout(fetchOrder, 500);
+      } else {
+        setMessage(`Failed to clear SMM order ID: ${data.message}`);
+        setMessageType('error');
+      }
+    } catch (error) {
+      console.error('Error clearing SMM order ID:', error);
+      setMessage('Error clearing SMM order ID');
+      setMessageType('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Extract orderId from URL query parameter
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -187,7 +238,7 @@ export default function OrderUpdatePage() {
 
         {message && (
           <div className={`p-4 mb-4 rounded ${
-            messageType === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            messageType === 'success' ? 'bg-green-100 text-green-700' : messageType === 'warning' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
           }`}>
             {message}
           </div>
@@ -273,6 +324,22 @@ export default function OrderUpdatePage() {
             {loading ? 'Processing...' : 'Process Order'}
           </button>
         </div>
+
+        {/* Only show the clear button if order has an SMM order ID */}
+        {orderData?.smmOrderId && (
+          <div className="mt-4">
+            <button
+              onClick={clearSmmOrderId}
+              disabled={loading}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:bg-gray-400 w-full"
+            >
+              {loading ? 'Clearing...' : `Clear SMM Order ID (${orderData.smmOrderId})`}
+            </button>
+            <p className="text-xs text-gray-500 mt-1">
+              This will allow the order to be processed again
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
