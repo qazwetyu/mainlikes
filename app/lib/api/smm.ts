@@ -207,7 +207,7 @@ export async function createSMMOrder(
   } catch (error) {
     console.error('Error creating SMM order:', error);
     // Return a mock order ID for error cases
-    return { 
+  return {
       orderId: `smm-mock-error-${Date.now()}`,
       status: 'error',
       error: error instanceof Error ? error.message : 'Unknown error'

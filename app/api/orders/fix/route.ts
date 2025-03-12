@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     // Get parameters from URL
     const url = new URL(request.url);
     const orderId = url.searchParams.get('orderId');
-    const serviceId = url.searchParams.get('serviceId') || '1479';
+    const serviceId = url.searchParams.get('serviceId') || '1435';
     const targetLink = url.searchParams.get('targetLink') || 'https://instagram.com/default_user';
     const quantity = parseInt(url.searchParams.get('quantity') || '100');
     

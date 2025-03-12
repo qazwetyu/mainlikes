@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 export default function OrderUpdatePage() {
   const [orderId, setOrderId] = useState('');
   const [username, setUsername] = useState('');
-  const [serviceId, setServiceId] = useState('1479');
+  const [serviceId, setServiceId] = useState('1435');
   const [quantity, setQuantity] = useState(500);
   const [orderData, setOrderData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -15,7 +15,7 @@ export default function OrderUpdatePage() {
 
   // Common services
   const services = [
-    { id: '1479', name: 'Instagram Followers' },
+    { id: '1435', name: 'Instagram Followers' },
     { id: '951', name: 'Instagram Likes' },
     { id: '1481', name: 'Instagram Views' },
     { id: '1482', name: 'Instagram Comments' }
@@ -40,7 +40,7 @@ export default function OrderUpdatePage() {
         if (orderOp && orderOp.exists && orderOp.data) {
           setOrderData(orderOp.data);
           setUsername(orderOp.data.targetUrl || '');
-          setServiceId(orderOp.data.serviceId || '1479');
+          setServiceId(orderOp.data.serviceId || '1435');
           setQuantity(orderOp.data.quantity || 500);
           setMessage('Order found');
           setMessageType('success');

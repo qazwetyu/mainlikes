@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     
     // Try to get existing order data first
     let targetUrl = request.nextUrl.searchParams.get('targetUrl') || 'https://instagram.com/example';
-    let serviceId = request.nextUrl.searchParams.get('serviceId') || '1479';
+    let serviceId = request.nextUrl.searchParams.get('serviceId') || '1435';
     let amount = parseInt(request.nextUrl.searchParams.get('amount') || '2000', 10);
     let quantity = parseInt(request.nextUrl.searchParams.get('quantity') || '1000', 10);
     
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         
         // Use order data if available
         targetUrl = targetUrl || orderData.targetUrl || 'https://instagram.com/example';
-        serviceId = serviceId || orderData.serviceId || '1479';
+        serviceId = serviceId || orderData.serviceId || '1435';
         amount = amount || orderData.amount || 2000;
         quantity = quantity || orderData.quantity || 100;
         

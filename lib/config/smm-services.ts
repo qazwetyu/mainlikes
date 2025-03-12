@@ -11,7 +11,7 @@ interface SMMService {
 // Configuration for SMMA Pro services
 export const smmServices: Record<string, SMMService> = {
   instagramFollow: {
-    id: 1479,
+    id: 1435,
     name: "Instagram Followers",
     type: "follow",
     description: "High-quality Instagram followers",

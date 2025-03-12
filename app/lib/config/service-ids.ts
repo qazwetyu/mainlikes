@@ -5,13 +5,13 @@
 // Service type to SMM provider service ID mapping
 export const SERVICE_ID_MAP: Record<string, string> = {
   // Instagram services
-  followers: '1479',  // Instagram Followers
+  followers: '1435',  // Instagram Followers
   likes: '951',       // Instagram Likes (correct ID for likes)
   views: '1481',      // Instagram Views
   comments: '1482',   // Instagram Comments
   
   // Default fallbacks
-  default_followers: '1479',
+  default_followers: '1435',
   default_likes: '951'
 };
 

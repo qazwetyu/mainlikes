@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     console.log(`Target URL for order ${body.orderId}: ${targetUrl}`);
     
     // Get service details
-    const serviceId = body.serviceId || '1479'; // Default to Instagram Followers service
+    const serviceId = body.serviceId || '1435'; // Default to Instagram Followers service
     const quantity = body.quantity || 1000;
 
     // IMPORTANT: Create the order in Firebase first to ensure it exists
