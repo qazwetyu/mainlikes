@@ -18,6 +18,7 @@ const services = [
       { amount: 1000, price: 20000 },
       { amount: 3000, price: 60000 },
       { amount: 5000, price: 100000 },
+      { amount: 10000, price: 200000 },
     ]
   },
   {
