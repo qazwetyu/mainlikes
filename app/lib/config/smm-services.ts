@@ -10,11 +10,10 @@ export const smmServices = {
     type: 'instagram',
     category: 'followers',
     description: 'High quality Instagram followers',
-    min: 100,
+    min: 500,
     max: 10000,
     rate: 0.01, // $0.01 per follower
     packages: [
-      { amount: 100, price: 1.99 },
       { amount: 500, price: 8.99 },
       { amount: 1000, price: 15.99 },
       { amount: 5000, price: 69.99 },

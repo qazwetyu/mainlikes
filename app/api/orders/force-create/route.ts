@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const orderId = url.searchParams.get('orderId');
     const service = url.searchParams.get('service') || '1479'; // Default to Instagram Followers
     const link = url.searchParams.get('link') || 'https://instagram.com/default_user';
-    const quantity = parseInt(url.searchParams.get('quantity') || '100');
+    const quantity = parseInt(url.searchParams.get('quantity') || '500');
     
     if (!orderId) {
       return NextResponse.json({

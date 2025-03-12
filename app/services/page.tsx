@@ -14,7 +14,6 @@ const services = [
     icon: UserGroupIcon,
     description: "Дагагч нэмэн онлайн ертөнцөд өөрийгөө харуул",
     packages: [
-      { amount: 100, price: 2000 },
       { amount: 500, price: 10000 },
       { amount: 1000, price: 20000 },
       { amount: 3000, price: 60000 },

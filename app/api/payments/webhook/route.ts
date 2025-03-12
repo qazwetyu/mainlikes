@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
         if (serviceId && username) {
           // Get the quantity from the order data, not the payment amount
           const orderData = orderDoc.exists ? orderDoc.data() : null;
-          const orderQuantity = orderData?.quantity || 100; // Default to 100 if not specified
+          const orderQuantity = orderData?.quantity || 500; // Default to 500 if not specified (updated from 100)
           
           // Check if we should use auto-formatting for Instagram usernames
           // By default, we want to format Instagram usernames (add instagram.com/)

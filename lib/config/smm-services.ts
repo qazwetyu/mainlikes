@@ -15,7 +15,7 @@ export const smmServices: Record<string, SMMService> = {
     name: "Instagram Followers",
     type: "follow",
     description: "High-quality Instagram followers",
-    minQuantity: 100,
+    minQuantity: 500,
     maxQuantity: 10000,
     price: 8000 // 8000 MNT per 1000 followers
   },

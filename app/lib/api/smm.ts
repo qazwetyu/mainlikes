@@ -283,11 +283,11 @@ export async function getSMMServices() {
       return [
         {
           id: '1',
-          name: 'Instagram Followers',
+          name: 'Instagram Followers (Fallback)',
           type: 'Default',
           category: 'Instagram',
           rate: '100/$1',
-          min: 100,
+          min: 500,
           max: 10000
         }
       ];
@@ -304,7 +304,7 @@ export async function getSMMServices() {
         type: 'Default',
         category: 'Instagram',
         rate: '100/$1',
-        min: 100,
+        min: 500,
         max: 10000
       }
     ];
