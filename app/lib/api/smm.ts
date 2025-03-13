@@ -120,16 +120,20 @@ export async function createSMMOrder(
   
   // Check if this is an Instagram service and handle username formatting
   // For followers we need instagram.com/username format
-  if (serviceId === '1479' || serviceId.includes('instagram') || serviceId.includes('follow')) {
-    // Only add instagram.com prefix if it's not already there
-    if (!formattedLink.includes('instagram.com/') && !formattedLink.includes('instagr.am/')) {
-      // Remove @ if present
-      if (formattedLink.startsWith('@')) {
-        formattedLink = formattedLink.substring(1);
-      }
-      // Add the proper Instagram URL format
-      formattedLink = `https://instagram.com/${formattedLink}`;
+  if (serviceId === '1435' || serviceId.includes('instagram') || serviceId.includes('follow')) {
+    // Remove @ if present
+    if (formattedLink.startsWith('@')) {
+      formattedLink = formattedLink.substring(1);
     }
+    
+    // Remove any existing http:// or https:// and instagram.com/
+    formattedLink = formattedLink.replace(/^https?:\/\//, '').replace(/^(?:www\.)?instagram\.com\//, '');
+    
+    // Add instagram.com/ prefix
+    formattedLink = `instagram.com/${formattedLink}`;
+    
+    // Log the formatted link for debugging
+    console.log('Formatted Instagram link:', formattedLink);
   }
   // For likes, we need the post URL format
   else if (serviceId === '951' || serviceId.includes('like')) {
