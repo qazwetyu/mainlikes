@@ -150,7 +150,7 @@ export default function Home() {
             <p className="text-gray-600 mb-6">Дагагч нэмэн онлайн ертөнцөд өөрийгөө харуул</p>
             <div className="flex justify-between items-center mb-6">
               <span className="text-sm text-gray-500">Үнэ:</span>
-              <span className="text-lg font-semibold text-purple-600">₮10,000 - ₮100,000</span>
+              <span className="text-lg font-semibold text-purple-600">₮5,000 - ₮100,000</span>
             </div>
             <Link href="/services?type=followers" className="block">
               <motion.button
