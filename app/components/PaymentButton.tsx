@@ -73,7 +73,11 @@ export default function PaymentButton({
       }
     } catch (error) {
       console.error('Payment error:', error);
-      setError('Төлбөр боловсруулахад алдаа гарлаа. instagram.com/dagagch.nem хаягаар холбогдоод нэмүүлээрэй.');
+      setError('Төлбөр боловсруулахад алдаа гарлаа. Таныг instagram.com/dagagch.nem руу дахин чиглүүлж байна...');
+      // Automatically redirect after showing the message
+      setTimeout(() => {
+        window.location.href = 'https://instagram.com/dagagch.nem';
+      }, 2000);
     } finally {
       setLoading(false);
     }
