@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { ShieldCheckIcon, BoltIcon, HeartIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import Footer from "./components/Footer";
 import Image from 'next/image';
 
 // Animation variants for staggered animations
@@ -377,9 +376,6 @@ export default function Home() {
           </div>
         </motion.div>
       </section>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 } 
