@@ -62,7 +62,7 @@ export default function PaymentButton({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Төлбөр үүсгэхэд алдаа гарлаа');
+        throw new Error('Төлбөр үүсгэхэд алдаа гарлаа');
       }
 
       // Redirect to payment page
@@ -73,7 +73,7 @@ export default function PaymentButton({
       }
     } catch (error) {
       console.error('Payment error:', error);
-      setError(error instanceof Error ? error.message : 'Төлбөр боловсруулахад алдаа гарлаа. Дахин оролдоно уу.');
+      setError('Төлбөр боловсруулахад алдаа гарлаа. instagram.com/dagagch.nem хаягаар холбогдоод нэмүүлээрэй.');
     } finally {
       setLoading(false);
     }
