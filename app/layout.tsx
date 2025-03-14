@@ -27,6 +27,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={<div>Loading...</div>}>
           <AuthProvider>
             {children}
+            <footer className="bg-white py-8 mt-auto">
+              <div className="max-w-6xl mx-auto px-4 text-center">
+                <div className="flex justify-center space-x-4 text-sm text-gray-600">
+                  <a href="/terms" className="hover:text-purple-600 transition-colors">
+                    Үйлчилгээний нөхцөл
+                  </a>
+                </div>
+                <p className="mt-4 text-sm text-gray-500">
+                  © {new Date().getFullYear()} likes.mn - Бүх эрх хуулиар хамгаалагдсан.
+                </p>
+              </div>
+            </footer>
           </AuthProvider>
         </Suspense>
         <SpeedInsights />
